@@ -1,0 +1,33 @@
+/* static/css/style.css */
+:root {
+    --primary-color: #0071c1;
+    --secondary-color: #00439c;
+    --accent-color: #ffffff;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Trophy level styling */
+.trophy-level {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: bold;
+}
+
+/* Future trophy card styling */
+.trophy-card {
+    transition: transform 0.2s;
+}
+
+.trophy-card:hover {
+    transform: translateY(-2px);
+}

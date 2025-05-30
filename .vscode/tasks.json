@@ -1,0 +1,33 @@
+// Create .vscode/tasks.json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Django: Run Server",
+            "type": "shell",
+            "command": "${workspaceFolder}/trophytracker/Scripts/python.exe",
+            "args": ["manage.py", "runserver"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Django: Make Migrations",
+            "type": "shell",
+            "command": "${workspaceFolder}/trophytracker/Scripts/python.exe",
+            "args": ["manage.py", "makemigrations"],
+            "group": "build"
+        },
+        {
+            "label": "Django: Migrate",
+            "type": "shell",
+            "command": "${workspaceFolder}/trophytracker/Scripts/python.exe",
+            "args": ["manage.py", "migrate"],
+            "group": "build"
+        }
+    ]
+}
