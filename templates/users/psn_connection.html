@@ -1,0 +1,503 @@
+<!-- templates/users/psn_connection.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Connect PlayStation Network - Trophy Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+.psn-connection-card {
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+.psn-step {
+    background: #f8f9fa;
+    border-left: 4px solid #0071c1;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.psn-step h6 {
+    color: #0071c1;
+    margin-bottom: 0.5rem;
+}
+
+.psn-id-preview {
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.sync-status {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.sync-status.success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.sync-status.error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.sync-status.warning {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.trophy-stats-preview {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.sync-progress {
+    display: none;
+}
+
+.sync-progress.active {
+    display: block;
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card psn-connection-card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fab fa-playstation"></i> Connect Your PlayStation Network</h4>
+                </div>
+                <div class="card-body">
+                    {% if not user.psn_id %}
+                        <!-- Step 1: PSN ID Setup -->
+                        <div class="psn-step">
+                            <h6><i class="fas fa-user"></i> Step 1: Enter Your PSN ID</h6>
+                            <p>We need your PlayStation Network ID to fetch your trophy data.</p>
+                        </div>
+                        
+                        <form id="psn-connection-form" method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="psn_id" class="form-label">PlayStation Network ID</label>
+                                <input type="text" class="form-control" id="psn_id" name="psn_id" 
+                                       placeholder="Enter your PSN ID (e.g., YourPSNUsername)" required>
+                                <div class="form-text">
+                                    This is your PSN username, not your email address.
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="profile_public" 
+                                           name="profile_public" required>
+                                    <label class="form-check-label" for="profile_public">
+                                        My PlayStation profile is set to <strong>Public</strong>
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    We can only access trophy data from public profiles. 
+                                    <a href="#privacy-help" data-bs-toggle="collapse">How to make profile public?</a>
+                                </div>
+                            </div>
+                            
+                            <div class="collapse" id="privacy-help">
+                                <div class="alert alert-info">
+                                    <h6>How to make your PlayStation profile public:</h6>
+                                    <ol>
+                                        <li>On your PlayStation console, go to <strong>Settings</strong></li>
+                                        <li>Select <strong>Account Management</strong> → <strong>Privacy Settings</strong></li>
+                                        <li>Select <strong>Gaming | Media</strong></li>
+                                        <li>Set <strong>Trophies</strong> to <strong>Anyone</strong></li>
+                                        <li>Set <strong>Games</strong> to <strong>Anyone</strong></li>
+                                    </ol>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="validate-btn">
+                                <i class="fas fa-check-circle"></i> Validate PSN ID
+                            </button>
+                        </form>
+                        
+                        <!-- Validation Progress -->
+                        <div class="sync-progress" id="validation-progress">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span>Validating PSN ID and checking profile access...</span>
+                            </div>
+                        </div>
+                        
+                    {% else %}
+                        <!-- PSN ID Connected -->
+                        <div class="sync-status success">
+                            <h6><i class="fas fa-check-circle"></i> PlayStation Network Connected</h6>
+                            <p class="mb-1"><strong>PSN ID:</strong> {{ user.psn_id }}</p>
+                            <p class="mb-1"><strong>Profile Status:</strong> 
+                                {% if user.psn_profile_public %}
+                                    <span class="text-success">Public ✓</span>
+                                {% else %}
+                                    <span class="text-danger">Private ⚠️</span>
+                                {% endif %}
+                            </p>
+                            {% if user.last_successful_sync %}
+                                <p class="mb-0"><strong>Last Sync:</strong> {{ user.last_successful_sync|timesince }} ago</p>
+                            {% else %}
+                                <p class="mb-0"><strong>Status:</strong> Never synced</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Trophy Statistics Preview -->
+                        <div class="trophy-stats-preview">
+                            <h6>Current Trophy Statistics</h6>
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <div class="trophy-stat">
+                                        <i class="fas fa-medal" style="color: #cd7f32;"></i>
+                                        <div class="fw-bold">{{ user.bronze_count }}</div>
+                                        <small class="text-muted">Bronze</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="trophy-stat">
+                                        <i class="fas fa-medal" style="color: #c0c0c0;"></i>
+                                        <div class="fw-bold">{{ user.silver_count }}</div>
+                                        <small class="text-muted">Silver</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="trophy-stat">
+                                        <i class="fas fa-medal" style="color: #ffd700;"></i>
+                                        <div class="fw-bold">{{ user.gold_count }}</div>
+                                        <small class="text-muted">Gold</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="trophy-stat">
+                                        <i class="fas fa-trophy" style="color: #e5e4e2;"></i>
+                                        <div class="fw-bold">{{ user.platinum_count }}</div>
+                                        <small class="text-muted">Platinum</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Trophy Level:</strong> {{ user.current_trophy_level }}
+                                    <br><small class="text-muted">{{ user.get_trophy_level_name }}</small>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Total Score:</strong> {{ user.total_trophy_score|floatformat:0 }}
+                                    <br><small class="text-muted">Skill-weighted points</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sync Controls -->
+                        <div class="d-grid gap-2">
+                            {% if user.can_sync_trophies %}
+                                <button type="button" class="btn btn-success btn-lg" id="sync-trophies-btn">
+                                    <i class="fas fa-sync"></i> Sync Trophies Now
+                                </button>
+                            {% else %}
+                                <button type="button" class="btn btn-secondary btn-lg" disabled>
+                                    <i class="fas fa-exclamation-triangle"></i> Cannot Sync
+                                </button>
+                                {% if not user.psn_profile_public %}
+                                    <small class="text-danger">Profile must be public to sync trophies</small>
+                                {% elif user.sync_error_count >= 5 %}
+                                    <small class="text-danger">Too many sync errors. Contact support.</small>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#sync-settings">
+                                <i class="fas fa-cog"></i> Sync Settings
+                            </button>
+                        </div>
+                        
+                        <!-- Sync Progress (Hidden by default) -->
+                        <div class="sync-progress" id="sync-progress">
+                            <h6><i class="fas fa-sync fa-spin"></i> Syncing Trophies</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" role="progressbar" style="width: 0%" id="sync-progress-bar">0%</div>
+                            </div>
+                            <div id="sync-current-task">Initializing...</div>
+                            <small class="text-muted">This may take a few minutes depending on your trophy collection size.</small>
+                        </div>
+                        
+                        <!-- Sync Settings -->
+                        <div class="collapse mt-3" id="sync-settings">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Synchronization Settings</h6>
+                                    <form method="post" action="{% url 'users:update_sync_settings' %}">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="sync_enabled" 
+                                                       name="sync_enabled" {% if user.sync_enabled %}checked{% endif %}>
+                                                <label class="form-check-label" for="sync_enabled">
+                                                    Enable automatic trophy syncing
+                                                </label>
+                                            </div>
+                                            <div class="form-text">
+                                                When enabled, your trophies will sync automatically when you visit the site.
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="psn_id_update" class="form-label">Update PSN ID</label>
+                                            <input type="text" class="form-control" id="psn_id_update" 
+                                                   name="psn_id" value="{{ user.psn_id }}">
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Save Settings
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#disconnect-modal">
+                                                <i class="fas fa-unlink"></i> Disconnect PSN Account
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Sync History -->
+                        {% if user.sync_jobs.all %}
+                            <div class="mt-4">
+                                <h6>Recent Sync History</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th>Games</th>
+                                                <th>Trophies</th>
+                                                <th>Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for job in user.sync_jobs.all|slice:":5" %}
+                                                <tr>
+                                                    <td>{{ job.created_at|date:"M j, Y H:i" }}</td>
+                                                    <td>
+                                                        {% if job.status == 'completed' %}
+                                                            <span class="badge bg-success">{{ job.status|title }}</span>
+                                                        {% elif job.status == 'failed' %}
+                                                            <span class="badge bg-danger">{{ job.status|title }}</span>
+                                                        {% elif job.status == 'running' %}
+                                                            <span class="badge bg-primary">{{ job.status|title }}</span>
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">{{ job.status|title }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ job.games_found }}</td>
+                                                    <td>{{ job.trophies_synced }}</td>
+                                                    <td>
+                                                        {% if job.duration %}
+                                                            {{ job.duration.total_seconds|floatformat:0 }}s
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Disconnect Confirmation Modal -->
+<div class="modal fade" id="disconnect-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Disconnect PlayStation Network</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to disconnect your PlayStation Network account?</p>
+                <p class="text-danger"><strong>Warning:</strong> This will:</p>
+                <ul>
+                    <li>Stop automatic trophy syncing</li>
+                    <li>Remove your PSN ID from your profile</li>
+                    <li>Keep your existing trophy data and scores</li>
+                </ul>
+                <p>You can reconnect your PSN account at any time.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'users:disconnect_psn' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Disconnect PSN Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // PSN ID Validation
+    const psnForm = document.getElementById('psn-connection-form');
+    const validateBtn = document.getElementById('validate-btn');
+    const validationProgress = document.getElementById('validation-progress');
+    
+    if (psnForm) {
+        psnForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const psnId = document.getElementById('psn_id').value.trim();
+            const profilePublic = document.getElementById('profile_public').checked;
+            
+            if (!psnId || !profilePublic) {
+                alert('Please enter your PSN ID and confirm your profile is public.');
+                return;
+            }
+            
+            // Show progress
+            validateBtn.disabled = true;
+            validationProgress.classList.add('active');
+            
+            // Submit form data
+            const formData = new FormData(psnForm);
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show connected state
+                    window.location.reload();
+                } else {
+                    // Show error
+                    validationProgress.classList.remove('active');
+                    validateBtn.disabled = false;
+                    
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                validationProgress.classList.remove('active');
+                validateBtn.disabled = false;
+                alert('An error occurred while validating your PSN ID. Please try again.');
+            });
+        });
+    }
+    
+    // Trophy Sync
+    const syncBtn = document.getElementById('sync-trophies-btn');
+    const syncProgress = document.getElementById('sync-progress');
+    const syncProgressBar = document.getElementById('sync-progress-bar');
+    const syncCurrentTask = document.getElementById('sync-current-task');
+    
+    if (syncBtn) {
+        syncBtn.addEventListener('click', function() {
+            if (confirm('Start trophy synchronization? This may take several minutes.')) {
+                startTrophySync();
+            }
+        });
+    }
+    
+    function startTrophySync() {
+        syncBtn.disabled = true;
+        syncProgress.classList.add('active');
+        
+        fetch('{% url "users:sync_trophies" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Start polling for progress
+                pollSyncProgress(data.job_id);
+            } else {
+                syncProgress.classList.remove('active');
+                syncBtn.disabled = false;
+                alert('Error starting sync: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            syncProgress.classList.remove('active');
+            syncBtn.disabled = false;
+            alert('An error occurred while starting sync. Please try again.');
+        });
+    }
+    
+    function pollSyncProgress(jobId) {
+        const poll = setInterval(() => {
+            fetch(`{% url "users:sync_status" %}?job_id=${jobId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update progress bar
+                syncProgressBar.style.width = data.progress + '%';
+                syncProgressBar.textContent = data.progress + '%';
+                syncCurrentTask.textContent = data.current_task || 'Processing...';
+                
+                if (data.status === 'completed') {
+                    clearInterval(poll);
+                    syncProgress.classList.remove('active');
+                    syncBtn.disabled = false;
+                    
+                    // Show success message and reload
+                    alert(`Sync completed! Synced ${data.trophies_synced} trophies across ${data.games_found} games.`);
+                    window.location.reload();
+                } else if (data.status === 'failed') {
+                    clearInterval(poll);
+                    syncProgress.classList.remove('active');
+                    syncBtn.disabled = false;
+                    alert('Sync failed: ' + (data.error_message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error polling sync status:', error);
+                clearInterval(poll);
+                syncProgress.classList.remove('active');
+                syncBtn.disabled = false;
+            });
+        }, 2000); // Poll every 2 seconds
+    }
+});
+</script>
+{% endblock %}

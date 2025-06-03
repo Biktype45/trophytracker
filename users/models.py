@@ -14,6 +14,18 @@ class User(AbstractUser):
     psn_access_token = models.TextField(blank=True, null=True)  # Encrypted in production
     psn_refresh_token = models.TextField(blank=True, null=True)  # Encrypted in production
     psn_token_expires = models.DateTimeField(null=True, blank=True)
+    psn_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    psn_profile_public = models.BooleanField(default=False)
+    psn_account_id = models.CharField(max_length=100, blank=True, null=True)
+    sync_enabled = models.BooleanField(default=True)
+    last_sync_attempt = models.DateTimeField(null=True, blank=True)
+    last_successful_sync = models.DateTimeField(null=True, blank=True)
+    sync_error_count = models.IntegerField(default=0)
+    last_sync_error = models.TextField(blank=True)
+
+    def can_sync_trophies(self):
+        return (self.psn_id and self.psn_profile_public and 
+                self.sync_enabled and self.sync_error_count < 5)
     
     # Trophy Stats (calculated fields)
     total_trophy_score = models.IntegerField(default=0)
