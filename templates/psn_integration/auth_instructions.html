@@ -1,0 +1,74 @@
+<!-- =============================================================================
+Create: templates/psn_integration/auth_instructions.html
+Instructions for manual PSN authentication
+============================================================================= -->
+
+{% extends 'base.html' %}
+
+{% block title %}PSN Authentication Help - Trophy Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fab fa-playstation"></i> PlayStation Network Authentication</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>🎉 Great! PSN Authentication is Working!</h5>
+                        <p>You successfully reached PlayStation's login page, which means our OAuth integration is configured correctly.</p>
+                    </div>
+                    
+                    <h6>What just happened?</h6>
+                    <ol>
+                        <li>You clicked "Connect PSN Account"</li>
+                        <li>You were redirected to PlayStation's official login page</li>
+                        <li>PlayStation tried to redirect back to our app</li>
+                        <li>Your browser showed an error because PlayStation uses a mobile app redirect scheme</li>
+                    </ol>
+                    
+                    <h6>How to complete the connection:</h6>
+                    <div class="alert alert-warning">
+                        <p><strong>Step 1:</strong> Look at the error message in your browser</p>
+                        <p><strong>Step 2:</strong> Find the URL that starts with <code>com.scee.psxandroid.scecompcall://redirect/?code=</code></p>
+                        <p><strong>Step 3:</strong> Copy the <strong>code</strong> and <strong>state</strong> values from that URL</p>
+                        <p><strong>Step 4:</strong> Visit this URL in your browser:</p>
+                        <code>http://127.0.0.1:8000/psn/auth/callback/?code=YOUR_CODE&state=YOUR_STATE</code>
+                    </div>
+                    
+                    <h6>Example:</h6>
+                    <p>If the error showed:</p>
+                    <code class="small">com.scee.psxandroid.scecompcall://redirect/?code=abc123&state=xyz456</code>
+                    
+                    <p>Then visit:</p>
+                    <code class="small">http://127.0.0.1:8000/psn/auth/callback/?code=abc123&state=xyz456</code>
+                    
+                    <div class="mt-4">
+                        <a href="/profile/" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Profile
+                        </a>
+                        <a href="/psn/auth/start/" class="btn btn-success">
+                            <i class="fab fa-playstation"></i> Try PSN Login Again
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6>Technical Details</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Why this happens:</strong> PlayStation's OAuth system is designed for mobile apps, not web browsers. In a production environment, we would implement a different authentication flow or use a mobile app.</p>
+                    
+                    <p><strong>Phase 2 Improvement:</strong> We'll implement a better solution that handles this redirect automatically or provides a smoother user experience.</p>
+                    
+                    <p><strong>Current Status:</strong> Phase 1 ✅ - PSN authentication flow is working and ready for Phase 2 enhancements.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

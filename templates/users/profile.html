@@ -1,6 +1,6 @@
 <!-- =============================================================================
 File: templates/users/profile.html
-Complete User Profile Template with PSN Integration
+Fixed Profile Template with Proper Django Syntax
 ============================================================================= -->
 
 {% extends 'base.html' %}
@@ -54,6 +54,12 @@ Complete User Profile Template with PSN Integration
 .psn-connect {
     background: linear-gradient(45deg, #28a745, #20c997);
     border: none;
+    color: white;
+    transition: transform 0.2s ease;
+}
+
+.psn-connect:hover {
+    transform: translateY(-2px);
     color: white;
 }
 
@@ -125,6 +131,15 @@ Complete User Profile Template with PSN Integration
 .stats-card:hover {
     transform: translateY(-2px);
 }
+
+/* Debug styles */
+.debug-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
 </style>
 {% endblock %}
 
@@ -167,13 +182,14 @@ Complete User Profile Template with PSN Integration
         </div>
 
         <!-- PSN Integration Card -->
-        {% if user == profile_user %}
+        {% if user.is_authenticated and user.username == profile_user.username %}
         <div class="card mt-3">
             <div class="card-header">
                 <h5 class="mb-0"><i class="fab fa-playstation"></i> PlayStation Network</h5>
             </div>
             <div class="card-body">
                 {% if profile_user.psn_id %}
+                    <!-- Connected State -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <strong>{{ profile_user.psn_id }}</strong>
@@ -184,20 +200,59 @@ Complete User Profile Template with PSN Integration
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-outline-primary btn-sm">
+                        <a href="/psn/sync/" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync"></i> Sync Trophies
+                        </a>
+                        <a href="/psn/status/" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-info-circle"></i> View Status
                         </a>
-                        <a href="{% url 'psn_integration:psn_disconnect' %}" class="btn btn-outline-danger btn-sm">
+                        <a href="/psn/disconnect/" class="btn btn-outline-danger btn-sm">
                             <i class="fas fa-unlink"></i> Disconnect
                         </a>
                     </div>
                 {% else %}
+                    <!-- Not Connected State - DEBUG VERSION -->
                     <div class="text-center">
                         <i class="fab fa-playstation fa-3x text-muted mb-3"></i>
                         <p class="text-muted mb-3">Connect your PlayStation Network account to sync your trophies and get accurate skill-based rankings.</p>
-                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn psn-connect">
-                            <i class="fab fa-playstation"></i> Connect PSN Account
-                        </a>
+                        
+                        <!-- Debug: Multiple button versions to test -->
+                        <div class="d-grid gap-2">
+                            <!-- Button 1: Original -->
+                            <a href="/psn/auth/start/" class="btn psn-connect" id="psn-btn-1">
+                                <i class="fab fa-playstation"></i> Connect PSN Account (v1)
+                            </a>
+                            
+                            <!-- Button 2: Simple version -->
+                            <a href="/psn/auth/start/" class="btn btn-success" id="psn-btn-2">
+                                <i class="fab fa-playstation"></i> Connect PSN Account (v2)
+                            </a>
+                            
+                            <!-- Button 3: Direct onclick -->
+                            <button type="button" class="btn btn-primary" id="psn-btn-3" onclick="window.location.href='/psn/auth/start/'">
+                                <i class="fab fa-playstation"></i> Connect PSN Account (v3)
+                            </button>
+                            
+                            <!-- Button 4: Form submit -->
+                            <form action="/psn/auth/start/" method="get" style="margin: 0;">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fab fa-playstation"></i> Connect PSN Account (v4)
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Debug info -->
+                        <div class="debug-section mt-3">
+                            <small>
+                                <strong>Debug Info:</strong><br>
+                                User: {{ user.username }}<br>
+                                Profile: {{ profile_user.username }}<br>
+                                Same User: {% if user.username == profile_user.username %}YES{% else %}NO{% endif %}<br>
+                                PSN ID: "{{ profile_user.psn_id }}"<br>
+                                PSN Account: "{{ profile_user.psn_account_id }}"<br>
+                                User Authenticated: {{ user.is_authenticated }}
+                            </small>
+                        </div>
                     </div>
                 {% endif %}
             </div>
@@ -288,93 +343,6 @@ Complete User Profile Template with PSN Integration
             </div>
         </div>
 
-        <!-- Recent Trophy Activity -->
-        {% if recent_trophies %}
-        <div class="card mt-3 stats-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Trophies</h5>
-                <small class="text-muted">{{ recent_trophies|length }} recent</small>
-            </div>
-            <div class="card-body">
-                {% for user_trophy in recent_trophies %}
-                <div class="d-flex align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
-                    <div class="trophy-icon me-3">
-                        {% if user_trophy.trophy.icon_url %}
-                            <img src="{{ user_trophy.trophy.icon_url }}" alt="Trophy" width="40" height="40">
-                        {% else %}
-                            <i class="fas fa-trophy fa-2x trophy-{{ user_trophy.trophy.trophy_type }}"></i>
-                        {% endif %}
-                    </div>
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1">{{ user_trophy.trophy.name }}</h6>
-                        <p class="text-muted mb-1 small">{{ user_trophy.trophy.game.title }}</p>
-                        <small class="text-muted">
-                            <i class="fas fa-calendar-alt"></i> {{ user_trophy.earned_datetime|timesince }} ago
-                            • <i class="fas fa-star"></i> {{ user_trophy.trophy.calculate_score }} points
-                        </small>
-                    </div>
-                    <div class="trophy-type-badge">
-                        <span class="badge trophy-{{ user_trophy.trophy.trophy_type }}">
-                            {{ user_trophy.trophy.trophy_type|title }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Game Progress -->
-        {% if game_progress %}
-        <div class="card mt-3 stats-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-gamepad"></i> Game Progress</h5>
-                <small class="text-muted">{{ game_progress|length }} games</small>
-            </div>
-            <div class="card-body">
-                {% for progress in game_progress %}
-                <div class="game-progress-item">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div>
-                            <h6 class="mb-1">{{ progress.game.title }}</h6>
-                            <small class="text-muted">
-                                Difficulty: <span class="difficulty-{{ progress.game.get_difficulty_category|lower }}">{{ progress.game.difficulty_multiplier }}x</span>
-                                • Platform: {{ progress.game.platform }}
-                            </small>
-                        </div>
-                        <div class="text-end">
-                            <strong class="text-primary">{{ progress.progress_percentage }}%</strong>
-                            <br>
-                            <small class="text-muted">{{ progress.total_score_earned }} pts</small>
-                        </div>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" role="progressbar" 
-                             style="width: {{ progress.progress_percentage }}%" 
-                             aria-valuenow="{{ progress.progress_percentage }}" 
-                             aria-valuemin="0" aria-valuemax="100">
-                        </div>
-                    </div>
-                    <div class="row mt-2 text-center">
-                        <div class="col-3">
-                            <small class="text-muted">🥉 {{ progress.bronze_earned }}</small>
-                        </div>
-                        <div class="col-3">
-                            <small class="text-muted">🥈 {{ progress.silver_earned }}</small>
-                        </div>
-                        <div class="col-3">
-                            <small class="text-muted">🥇 {{ progress.gold_earned }}</small>
-                        </div>
-                        <div class="col-3">
-                            <small class="text-muted">🏆 {{ progress.platinum_earned }}</small>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
         <!-- No Data Messages -->
         {% if not profile_user.psn_id %}
         <div class="card mt-3 stats-card">
@@ -382,30 +350,13 @@ Complete User Profile Template with PSN Integration
                 <div class="no-data-message">
                     <i class="fab fa-playstation fa-4x text-muted mb-3"></i>
                     <h5 class="text-muted">No Trophy Data Available</h5>
-                    {% if user == profile_user %}
+                    {% if user.is_authenticated and user.username == profile_user.username %}
                         <p class="text-muted mb-3">Connect your PlayStation Network account to start tracking your skill-based trophy scores!</p>
-                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn psn-connect">
-                            <i class="fab fa-playstation"></i> Connect PSN Account
+                        <a href="/psn/auth/start/" class="btn psn-connect" id="main-psn-btn">
+                            <i class="fab fa-playstation"></i> Connect PSN Account (Main)
                         </a>
                     {% else %}
                         <p class="text-muted">This user hasn't connected their PlayStation Network account yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% elif not recent_trophies and not game_progress %}
-        <div class="card mt-3 stats-card">
-            <div class="card-body">
-                <div class="no-data-message">
-                    <i class="fas fa-sync fa-4x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Trophy Activity Yet</h5>
-                    {% if user == profile_user %}
-                        <p class="text-muted mb-3">Your PSN account is connected, but no trophy data has been synced yet.</p>
-                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-primary">
-                            <i class="fas fa-sync"></i> Sync Trophies
-                        </a>
-                    {% else %}
-                        <p class="text-muted">This user hasn't synced their trophy data yet.</p>
                     {% endif %}
                 </div>
             </div>
@@ -415,7 +366,7 @@ Complete User Profile Template with PSN Integration
 </div>
 
 <!-- Profile Actions (for own profile) -->
-{% if user == profile_user %}
+{% if user.is_authenticated and user.username == profile_user.username %}
 <div class="row mt-4">
     <div class="col-12">
         <div class="card stats-card">
@@ -425,12 +376,12 @@ Complete User Profile Template with PSN Integration
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3">
-                        <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-primary btn-sm w-100">
+                        <a href="/profile/edit/" class="btn btn-outline-primary btn-sm w-100">
                             <i class="fas fa-edit"></i> Edit Profile
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-outline-info btn-sm w-100">
+                        <a href="/psn/status/" class="btn btn-outline-info btn-sm w-100">
                             <i class="fab fa-playstation"></i> PSN Status
                         </a>
                     </div>
@@ -454,29 +405,58 @@ Complete User Profile Template with PSN Integration
 
 {% block scripts %}
 <script>
-// Add some interactive features
+// Debug PSN Integration
 document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects to trophy stats
-    const trophyStats = document.querySelectorAll('.trophy-stat');
-    trophyStats.forEach(stat => {
-        stat.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-3px)';
-        });
-        stat.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-        });
+    console.log('=== PSN Integration Debug ===');
+    
+    // Check all PSN buttons
+    const buttons = [
+        'psn-btn-1', 'psn-btn-2', 'psn-btn-3', 'main-psn-btn'
+    ];
+    
+    buttons.forEach(function(btnId) {
+        const btn = document.getElementById(btnId);
+        console.log('Button', btnId + ':', btn);
+        
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                console.log('=== BUTTON CLICKED ===');
+                console.log('Button ID:', btnId);
+                console.log('Button href:', this.href);
+                console.log('Button onclick:', this.onclick);
+                console.log('Event:', e);
+                
+                // Let the navigation happen normally
+                console.log('Allowing navigation...');
+            });
+        }
     });
     
-    // Animate progress bars
-    const progressBars = document.querySelectorAll('.progress-bar');
-    progressBars.forEach(bar => {
-        const width = bar.style.width;
-        bar.style.width = '0%';
-        setTimeout(() => {
-            bar.style.transition = 'width 1s ease-in-out';
-            bar.style.width = width;
-        }, 100);
+    // Test fetch to PSN URL
+    console.log('Testing PSN URL with fetch...');
+    fetch('/psn/auth/start/', {
+        method: 'GET',
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        console.log('PSN URL Response:', response.status, response.statusText);
+        return response.text();
+    })
+    .then(text => {
+        console.log('PSN URL Content preview:', text.substring(0, 200));
+    })
+    .catch(error => {
+        console.log('PSN URL Error:', error);
     });
+    
+    // Check for JavaScript errors
+    window.addEventListener('error', function(e) {
+        console.log('JavaScript Error:', e.message, 'at', e.filename + ':' + e.lineno);
+    });
+    
+    console.log('=== Debug setup complete ===');
 });
 </script>
+{% endblock %>
 {% endblock %}
+<!-- End of Profile Template -->

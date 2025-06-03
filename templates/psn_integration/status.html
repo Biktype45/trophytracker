@@ -1,11 +1,11 @@
 <!-- =============================================================================
 File: templates/psn_integration/status.html
-PSN Status Template
+Basic PSN Status Template
 ============================================================================= -->
 
 {% extends 'base.html' %}
 
-{% block title %}PlayStation Network Status{% endblock %}
+{% block title %}PlayStation Network Status - Trophy Tracker{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -18,28 +18,29 @@ PSN Status Template
                 {% if psn_connected %}
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle"></i> Connected</h5>
-                        <p><strong>PSN ID:</strong> {{ psn_token.psn_online_id }}</p>
-                        <p><strong>Account ID:</strong> {{ psn_token.psn_account_id }}</p>
-                        <p><strong>Connected:</strong> {{ psn_token.created_at|date:"F d, Y H:i" }}</p>
-                        
-                        {% if token_expired %}
-                            <div class="alert alert-warning mt-3">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <strong>Token Expired</strong> - Please reconnect your account.
-                            </div>
+                        {% if psn_token %}
+                            <p><strong>PSN ID:</strong> {{ psn_token.psn_online_id }}</p>
+                            <p><strong>Account ID:</strong> {{ psn_token.psn_account_id }}</p>
+                            <p><strong>Connected:</strong> {{ psn_token.created_at|date:"F d, Y H:i" }}</p>
+                            
+                            {% if token_expired %}
+                                <div class="alert alert-warning mt-3">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Token Expired</strong> - Please reconnect your account.
+                                </div>
+                            {% else %}
+                                <p><strong>Token Expires:</strong> {{ psn_token.expires_at|date:"F d, Y H:i" }}</p>
+                            {% endif %}
                         {% else %}
-                            <p><strong>Token Expires:</strong> {{ psn_token.expires_at|date:"F d, Y H:i" }}</p>
-                        {% endif %}
-                        
-                        {% if psn_token.last_sync %}
-                            <p><strong>Last Sync:</strong> {{ psn_token.last_sync|timesince }} ago</p>
-                        {% else %}
-                            <p><strong>Last Sync:</strong> Never</p>
+                            <p><strong>PSN ID:</strong> {{ psn_id|default:"Connected" }}</p>
                         {% endif %}
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="{% url 'psn_integration:psn_disconnect' %}" class="btn btn-outline-danger">
+                        <a href="/psn/sync/" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Sync Trophies
+                        </a>
+                        <a href="/psn/disconnect/" class="btn btn-outline-danger">
                             <i class="fas fa-unlink"></i> Disconnect PSN Account
                         </a>
                     </div>
@@ -50,33 +51,27 @@ PSN Status Template
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn btn-primary">
+                        <a href="/psn/auth/start/" class="btn btn-success">
                             <i class="fab fa-playstation"></i> Connect PSN Account
                         </a>
                     </div>
                 {% endif %}
+                
+                <div class="mt-4">
+                    <a href="/profile/" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Profile
+                    </a>
+                </div>
             </div>
         </div>
-
-        <!-- Debug Information (only in development) -->
-        {% if debug %}
-        <div class="card mt-4">
-            <div class="card-header">
-                <h6>Debug Information</h6>
-            </div>
-            <div class="card-body">
-                <small class="text-muted">
-                    <p><strong>User:</strong> {{ user.username }} (ID: {{ user.id }})</p>
-                    <p><strong>PSN Connected:</strong> {{ psn_connected }}</p>
-                    {% if psn_token %}
-                        <p><strong>Token Active:</strong> {{ psn_token.is_active }}</p>
-                        <p><strong>Token Expired:</strong> {{ token_expired }}</p>
-                        <p><strong>Sync Errors:</strong> {{ psn_token.sync_errors }}</p>
-                    {% endif %}
-                </small>
-            </div>
+        
+        <!-- Development Note -->
+        <div class="alert alert-info mt-4">
+            <h6><i class="fas fa-info-circle"></i> Development Status</h6>
+            <p><strong>Phase 1:</strong> Basic PSN authentication setup ✅</p>
+            <p><strong>Phase 2:</strong> Full trophy sync functionality (Coming next!)</p>
+            <p>The "Connect PSN Account" button will redirect to PlayStation's login page once Phase 2 is implemented.</p>
         </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

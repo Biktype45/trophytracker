@@ -1,66 +1,134 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
+# =============================================================================
+# File: users/views.py
+# Complete Users Views with Profile Support
+# =============================================================================
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
-from django.contrib.auth.forms import AuthenticationForm
-from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView
-from .models import User
-from .forms import CustomUserCreationForm, UserProfileForm
+from django.contrib.auth import get_user_model
+
+# Import trophy models
+try:
+    from trophies.models import UserTrophy, UserGameProgress
+except ImportError:
+    # Handle case where trophies app isn't ready yet
+    UserTrophy = None
+    UserGameProgress = None
+
+try:
+    from games.models import Game
+except ImportError:
+    # Handle case where games app isn't ready yet
+    Game = None
+
+User = get_user_model()
 
 def home(request):
-    """Homepage with featured games and top users"""
-    from games.models import Game
-    from rankings.models import UserRanking
-    
+    """Home page view"""
     context = {
-        'featured_games': Game.objects.order_by('-updated_at')[:6],
-        'top_users': User.objects.order_by('-total_trophy_score')[:10],
         'total_users': User.objects.count(),
-        'total_games': Game.objects.count(),
+        'total_games': Game.objects.count() if Game else 0,
     }
     return render(request, 'users/home.html', context)
 
-class CustomUserCreateView(CreateView):
-    model = User
-    form_class = CustomUserCreationForm
-    template_name = 'users/register.html'
-    success_url = reverse_lazy('users:profile')
+def profile(request, username=None):
+    """User profile view"""
+    if username:
+        profile_user = get_object_or_404(User, username=username)
+    else:
+        if not request.user.is_authenticated:
+            return redirect('users:login')
+        profile_user = request.user
     
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        login(self.request, self.object)
-        messages.success(self.request, f'Welcome, {self.object.username}! Your account has been created.')
-        return response
-
-@login_required
-def profile_view(request):
-    """User profile with trophy statistics"""
-    user = request.user
+    # Get trophy statistics
+    total_trophies = (profile_user.bronze_count + profile_user.silver_count + 
+                     profile_user.gold_count + profile_user.platinum_count)
     
-    # Calculate user statistics
-    from trophies.models import UserGameProgress
+    # Get recent trophy activity (if models are available)
+    recent_trophies = []
+    if UserTrophy:
+        recent_trophies = UserTrophy.objects.filter(
+            user=profile_user, 
+            earned=True,
+            earned_datetime__isnull=False
+        ).select_related('trophy__game').order_by('-earned_datetime')[:10]
+    
+    # Get game progress (if models are available)
+    game_progress = []
+    if UserGameProgress:
+        game_progress = UserGameProgress.objects.filter(
+            user=profile_user
+        ).select_related('game').order_by('-last_updated')[:10]
     
     context = {
-        'user': user,
-        'level_name': user.get_trophy_level_name(),
-        'progress_percentage': user.level_progress_percentage,
-        'completed_games': UserGameProgress.objects.filter(user=user, completed=True).count(),
-        'total_games': UserGameProgress.objects.filter(user=user).count(),
-        'recent_progress': UserGameProgress.objects.filter(user=user).order_by('-last_updated')[:5],
+        'profile_user': profile_user,
+        'total_trophies': total_trophies,
+        'recent_trophies': recent_trophies,
+        'game_progress': game_progress,
     }
+    
     return render(request, 'users/profile.html', context)
 
 @login_required
 def profile_edit(request):
     """Edit user profile"""
     if request.method == 'POST':
-        form = UserProfileForm(request.POST, instance=request.user)
+        # Basic profile edit logic - you can enhance this later
+        user = request.user
+        
+        # For now, just handle basic fields
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        email = request.POST.get('email', '')
+        
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+        
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('users:profile')
+    
+    return render(request, 'users/profile_edit.html', {'user': request.user})
+
+def user_login(request):
+    """User login view"""
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Your profile has been updated!')
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f'Welcome back, {username}!')
+                return redirect('users:profile')
+        messages.error(request, 'Invalid username or password.')
+    else:
+        form = AuthenticationForm()
+    
+    return render(request, 'users/login.html', {'form': form})
+
+def user_logout(request):
+    """User logout view"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('users:home')
+
+def register(request):
+    """User registration view"""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            messages.success(request, f'Account created for {username}!')
+            login(request, user)
             return redirect('users:profile')
     else:
-        form = UserProfileForm(instance=request.user)
+        form = UserCreationForm()
     
-    return render(request, 'users/profile_edit.html', {'form': form})
+    return render(request, 'users/register.html', {'form': form})

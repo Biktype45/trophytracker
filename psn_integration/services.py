@@ -174,6 +174,46 @@ class PSNAPIService:
                 logger.error(f"Response content: {e.response.text}")
             raise
     
+    def get_game_trophies(self, np_communication_id, trophy_group_id='all'):
+        """Get trophies for a specific game"""
+        url = f"{self.api_base_url}/v1/npCommunicationIds/{np_communication_id}/trophyGroups/{trophy_group_id}/trophies"
+        
+        try:
+            logger.debug(f"Fetching trophies for game: {np_communication_id}")
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+            
+            trophies_data = response.json()
+            logger.debug(f"Retrieved {len(trophies_data.get('trophies', []))} trophies for {np_communication_id}")
+            return trophies_data
+        
+        except requests.RequestException as e:
+            logger.error(f"Failed to get game trophies for {np_communication_id}: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response content: {e.response.text}")
+            raise
+    
+    def get_user_earned_trophies(self, np_communication_id, trophy_group_id='all'):
+        """Get user's earned trophies for a specific game"""
+        url = f"{self.api_base_url}/v1/users/me/npCommunicationIds/{np_communication_id}/trophyGroups/{trophy_group_id}/trophies"
+        
+        try:
+            logger.debug(f"Fetching earned trophies for game: {np_communication_id}")
+            response = self.session.get(url, timeout=30)
+            response.raise_for_status()
+            
+            earned_data = response.json()
+            logger.debug(f"Retrieved earned status for {len(earned_data.get('trophies', []))} trophies in {np_communication_id}")
+            return earned_data
+        
+        except requests.RequestException as e:
+            logger.error(f"Failed to get earned trophies for {np_communication_id}: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Response status: {e.response.status_code}")
+                logger.error(f"Response content: {e.response.text}")
+            raise
+    
     def rate_limit_wait(self):
         """Implement rate limiting for PlayStation API"""
         # PlayStation API allows ~300 requests per 15 minutes
