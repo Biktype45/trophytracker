@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Trophy Tracker - Skill-Based PlayStation Trophy Rankings{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row">
+    <div class="col-12">
+        <div class="bg-trophy-theme text-white p-5 rounded mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 fw-bold">🏆 Trophy Tracker</h1>
+                    <p class="lead">The first PlayStation trophy platform that rewards skill over quantity</p>
+                    <p class="mb-4">Unlike other platforms, we use difficulty multipliers to ensure that completing Dark Souls carries more weight than 100 easy Ratalaika games.</p>
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'users:register' %}" class="btn btn-trophy btn-lg me-3">Get Started</a>
+                        <a href="{% url 'users:login' %}" class="btn btn-outline-light btn-lg">Login</a>
+                    {% else %}
+                        <a href="{% url 'users:profile' %}" class="btn btn-trophy btn-lg">View Your Profile</a>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="trophy-animation">
+                        <i class="fas fa-trophy fa-5x text-trophy-gold"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Row -->
+<div class="row text-center mb-5">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-primary">{{ total_users }}</h3>
+                <p class="text-muted">Skilled Hunters</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-primary">{{ total_games }}</h3>
+                <p class="text-muted">Rated Games</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-primary">20</h3>
+                <p class="text-muted">Trophy Levels</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-primary">10x</h3>
+                <p class="text-muted">Max Multiplier</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Games -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="mb-4">🎮 Featured Games</h2>
+        <div class="row">
+            {% for game in featured_games %}
+            <div class="col-md-4 mb-3">
+                <div class="card game-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ game.title }}</h5>
+                        <p class="card-text">{{ game.platform }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-primary">{{ game.difficulty_multiplier }}x</span>
+                            <small class="text-muted difficulty-indicator difficulty-{{ game.get_difficulty_category|lower|cut:' ' }}">
+                                {{ game.get_difficulty_category }}
+                            </small>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-trophy text-trophy-bronze"></i> {{ game.bronze_count }}
+                                <i class="fas fa-trophy text-trophy-silver ms-2"></i> {{ game.silver_count }}
+                                <i class="fas fa-trophy text-trophy-gold ms-2"></i> {{ game.gold_count }}
+                                {% if game.platinum_count %}
+                                    <i class="fas fa-trophy text-trophy-platinum ms-2"></i> {{ game.platinum_count }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Top Users -->
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">🏅 Top Trophy Hunters</h2>
+        <div class="table-responsive">
+            <table class="table ranking-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>User</th>
+                        <th>Level</th>
+                        <th>Score</th>
+                        <th>Trophies</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in top_users %}
+                    <tr>
+                        <td><strong>#{{ forloop.counter }}</strong></td>
+                        <td>
+                            <strong>{{ user.username }}</strong>
+                            {% if user.psn_id %}
+                                <br><small class="text-muted">{{ user.psn_id }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="trophy-level">
+                                Level {{ user.current_trophy_level }}: {{ user.get_trophy_level_name }}
+                            </span>
+                        </td>
+                        <td><strong>{{ user.total_trophy_score|floatformat:0 }}</strong></td>
+                        <td>
+                            <span class="trophy-bronze">{{ user.bronze_count }}</span>
+                            <span class="trophy-silver">{{ user.silver_count }}</span>
+                            <span class="trophy-gold">{{ user.gold_count }}</span>
+                            <span class="trophy-platinum">{{ user.platinum_count }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="bg-light p-4 rounded">
+            <h2 class="text-center mb-4">How Our Skill-Based System Works</h2>
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-gamepad fa-3x text-primary mb-3"></i>
+                    <h4>Game Difficulty Ratings</h4>
+                    <p>Every game gets a multiplier from 1.0x (extremely easy) to 10.0x (extremely difficult) based on skill required.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
+                    <h4>Smart Score Calculation</h4>
+                    <p>Trophy points = Base Points × Game Multiplier. A Dark Souls platinum is worth 90 points vs. 15 for easy games.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-crown fa-3x text-primary mb-3"></i>
+                    <h4>True Skill Recognition</h4>
+                    <p>20 trophy levels from "PS Noob" to "Maybe I Was The PlayStation All Along" based on your true gaming skill.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }}'s Profile - Trophy Tracker{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ user.username }}</h1>
+            {% if user.psn_id %}
+                <p class="mb-2"><strong>PSN ID:</strong> {{ user.psn_id }}</p>
+            {% endif %}
+            <div class="trophy-level mb-3">
+                Level {{ user.current_trophy_level }}: {{ level_name }}
+            </div>
+            <div class="progress mb-2" style="height: 10px;">
+                <div class="progress-bar level-progress" style="width: {{ progress_percentage }}%"></div>
+            </div>
+            <small class="text-light">{{ progress_percentage|floatformat:1 }}% to next level</small>
+        </div>
+        <div class="col-md-4 text-end">
+            <h2 class="text-trophy-gold">{{ user.total_trophy_score|floatformat:0 }}</h2>
+            <p class="mb-0">Total Score</p>
+            <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-light mt-2">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Trophy Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="profile-stats text-center">
+            <i class="fas fa-trophy trophy-bronze fa-2x mb-2"></i>
+            <h3>{{ user.bronze_count }}</h3>
+            <p class="text-muted">Bronze</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="profile-stats text-center">
+            <i class="fas fa-trophy trophy-silver fa-2x mb-2"></i>
+            <h3>{{ user.silver_count }}</h3>
+            <p class="text-muted">Silver</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="profile-stats text-center">
+            <i class="fas fa-trophy trophy-gold fa-2x mb-2"></i>
+            <h3>{{ user.gold_count }}</h3>
+            <p class="text-muted">Gold</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="profile-stats text-center">
+            <i class="fas fa-crown trophy-platinum fa-2x mb-2"></i>
+            <h3>{{ user.platinum_count }}</h3>
+            <p class="text-muted">Platinum</p>
+        </div>
+    </div>
+</div>
+
+<!-- Game Progress -->
+<div class="row">
+    <div class="col-md-6">
+        <h3>Game Statistics</h3>
+        <div class="profile-stats">
+            <div class="d-flex justify-content-between mb-2">
+                <span>Games Completed:</span>
+                <strong>{{ completed_games }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Games Started:</span>
+                <strong>{{ total_games }}</strong>
+            </div>
+            {% if total_games > 0 %}
+            <div class="d-flex justify-content-between mb-2">
+                <span>Completion Rate:</span>
+                <strong>{{ completed_games|mul:100|div:total_games|floatformat:1 }}%</strong>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <h3>Recent Activity</h3>
+        <div class="profile-stats">
+            {% for progress in recent_progress %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>{{ progress.game.title }}</strong>
+                    <br><small class="text-muted">{{ progress.progress_percentage }}% complete</small>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">{{ progress.last_updated|date:"M d" }}</small>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">No recent activity</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if not user.psn_id %}
+<!-- PSN ID Setup Alert -->
+<div class="alert alert-info mt-4">
+    <h5><i class="fas fa-info-circle"></i> Complete Your Profile</h5>
+    <p class="mb-2">Add your PlayStation Network ID to start tracking your trophies!</p>
+    <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Add PSN ID</a>
+</div>
+{% endif %}
+{% endblock %}
