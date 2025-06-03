@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'games',
     'trophies',
     'rankings',
+     'psn_integration',
 ]
 
 MIDDLEWARE = [
@@ -106,3 +107,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# PSN Integration Settings
+PSN_CLIENT_ID = config('PSN_CLIENT_ID', default='09515159-7237-4370-9b40-3806e67c0891')
+PSN_CLIENT_SECRET = config('PSN_CLIENT_SECRET', default='ERdqraWNIBhJbqJe')
+PSN_REDIRECT_URI = config('PSN_REDIRECT_URI', default='com.scee.psxandroid.scecompcall://redirect')
+PSN_API_BASE_URL = config('PSN_API_BASE_URL', default='https://m.np.playstation.com/api/trophy')
+PSN_AUTH_BASE_URL = config('PSN_AUTH_BASE_URL', default='https://ca.account.sony.com')
+
+# Generate a 32-byte key for token encryption
+import base64
+PSN_TOKEN_ENCRYPTION_KEY = config('PSN_TOKEN_ENCRYPTION_KEY', default=base64.urlsafe_b64encode(b'your-32-byte-key-here-for-dev-only!').decode())

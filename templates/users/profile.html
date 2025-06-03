@@ -1,115 +1,482 @@
+<!-- =============================================================================
+File: templates/users/profile.html
+Complete User Profile Template with PSN Integration
+============================================================================= -->
+
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ user.username }}'s Profile - Trophy Tracker{% endblock %}
+{% block title %}{{ profile_user.username }}'s Profile - Trophy Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Profile-specific styles */
+.profile-header {
+    background: linear-gradient(135deg, #0071c1, #00439c) !important;
+    color: white !important;
+    border-radius: 10px !important;
+}
+
+.profile-header * {
+    color: white !important;
+}
+
+.trophy-level {
+    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
+    color: #333 !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 25px !important;
+    font-weight: bold !important;
+    display: inline-block !important;
+    margin: 0.25rem 0 !important;
+}
+
+.trophy-stat {
+    padding: 1rem;
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.trophy-stat:hover {
+    transform: translateY(-2px);
+}
+
+.trophy-platinum { color: #e5e4e2; }
+.trophy-gold { color: #ffd700; }
+.trophy-silver { color: #c0c0c0; }
+.trophy-bronze { color: #cd7f32; }
+
+.psn-connected {
+    background: linear-gradient(45deg, #0071c1, #00439c);
+    border: none;
+}
+
+.psn-connect {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+}
+
+.game-progress-item {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #f8f9fa;
+    margin-bottom: 1rem;
+    transition: box-shadow 0.2s ease;
+}
+
+.game-progress-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.difficulty-extremely-easy, .difficulty-easy { color: #28a745; font-weight: bold; }
+.difficulty-standard { color: #ffc107; font-weight: bold; }
+.difficulty-aaa-standard, .difficulty-grind-heavy { color: #fd7e14; font-weight: bold; }
+.difficulty-challenging, .difficulty-souls-like, .difficulty-very-difficult, .difficulty-extremely-difficult { 
+    color: #dc3545; font-weight: bold; 
+}
+
+.level-progress {
+    background: linear-gradient(45deg, #0071c1, #00439c) !important;
+}
+
+.trophy-icon img {
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.trophy-type-badge .badge {
+    font-size: 0.75em;
+}
+
+.trophy-type-badge .badge.trophy-platinum {
+    background-color: #e5e4e2 !important;
+    color: #333 !important;
+}
+
+.trophy-type-badge .badge.trophy-gold {
+    background-color: #ffd700 !important;
+    color: #333 !important;
+}
+
+.trophy-type-badge .badge.trophy-silver {
+    background-color: #c0c0c0 !important;
+    color: #333 !important;
+}
+
+.trophy-type-badge .badge.trophy-bronze {
+    background-color: #cd7f32 !important;
+    color: white !important;
+}
+
+.no-data-message {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.stats-card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Profile Header -->
-<div class="profile-header">
-    <div class="row align-items-center">
-        <div class="col-md-8">
-            <h1 class="mb-2">{{ user.username }}</h1>
-            {% if user.psn_id %}
-                <p class="mb-2"><strong>PSN ID:</strong> {{ user.psn_id }}</p>
-            {% endif %}
-            <div class="trophy-level mb-3">
-                Level {{ user.current_trophy_level }}: {{ level_name }}
-            </div>
-            <div class="progress mb-2" style="height: 10px;">
-                <div class="progress-bar level-progress" style="width: {{ progress_percentage }}%"></div>
-            </div>
-            <small class="text-light">{{ progress_percentage|floatformat:1 }}% to next level</small>
-        </div>
-        <div class="col-md-4 text-end">
-            <h2 class="text-trophy-gold">{{ user.total_trophy_score|floatformat:0 }}</h2>
-            <p class="mb-0">Total Score</p>
-            <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-light mt-2">
-                <i class="fas fa-edit"></i> Edit Profile
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Trophy Statistics -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="profile-stats text-center">
-            <i class="fas fa-trophy trophy-bronze fa-2x mb-2"></i>
-            <h3>{{ user.bronze_count }}</h3>
-            <p class="text-muted">Bronze</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="profile-stats text-center">
-            <i class="fas fa-trophy trophy-silver fa-2x mb-2"></i>
-            <h3>{{ user.silver_count }}</h3>
-            <p class="text-muted">Silver</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="profile-stats text-center">
-            <i class="fas fa-trophy trophy-gold fa-2x mb-2"></i>
-            <h3>{{ user.gold_count }}</h3>
-            <p class="text-muted">Gold</p>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="profile-stats text-center">
-            <i class="fas fa-crown trophy-platinum fa-2x mb-2"></i>
-            <h3>{{ user.platinum_count }}</h3>
-            <p class="text-muted">Platinum</p>
-        </div>
-    </div>
-</div>
-
-<!-- Game Progress -->
 <div class="row">
-    <div class="col-md-6">
-        <h3>Game Statistics</h3>
-        <div class="profile-stats">
-            <div class="d-flex justify-content-between mb-2">
-                <span>Games Completed:</span>
-                <strong>{{ completed_games }}</strong>
+    <!-- Left Sidebar - User Info and PSN -->
+    <div class="col-md-4">
+        <!-- Profile Header Card -->
+        <div class="card profile-header">
+            <div class="card-body text-center">
+                {% if profile_user.psn_avatar_url %}
+                    <img src="{{ profile_user.psn_avatar_url }}" alt="PSN Avatar" class="rounded-circle mb-3" width="100" height="100">
+                {% else %}
+                    <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                        <i class="fas fa-user fa-2x text-white"></i>
+                    </div>
+                {% endif %}
+                
+                <h3 class="text-white mb-1">{{ profile_user.username }}</h3>
+                {% if profile_user.psn_id %}
+                    <p class="text-white-50 mb-3">
+                        <i class="fab fa-playstation"></i> {{ profile_user.psn_id }}
+                    </p>
+                {% endif %}
+                
+                <div class="trophy-level mb-3">
+                    Level {{ profile_user.current_trophy_level }}: {{ profile_user.get_trophy_level_name }}
+                </div>
+                
+                <!-- Level Progress Bar -->
+                <div class="progress mb-3" style="height: 8px; background: rgba(255,255,255,0.2);">
+                    <div class="progress-bar level-progress" role="progressbar" 
+                         style="width: {{ profile_user.level_progress_percentage }}%" 
+                         aria-valuenow="{{ profile_user.level_progress_percentage }}" 
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+                <small class="text-white-50">{{ profile_user.level_progress_percentage|floatformat:1 }}% to next level</small>
             </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span>Games Started:</span>
-                <strong>{{ total_games }}</strong>
+        </div>
+
+        <!-- PSN Integration Card -->
+        {% if user == profile_user %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fab fa-playstation"></i> PlayStation Network</h5>
             </div>
-            {% if total_games > 0 %}
-            <div class="d-flex justify-content-between mb-2">
-                <span>Completion Rate:</span>
-                <strong>{{ completed_games|mul:100|div:total_games|floatformat:1 }}%</strong>
+            <div class="card-body">
+                {% if profile_user.psn_id %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>{{ profile_user.psn_id }}</strong>
+                            <br>
+                            <small class="text-muted">Connected Account</small>
+                        </div>
+                        <span class="badge bg-success"><i class="fas fa-check-circle"></i> Connected</span>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-info-circle"></i> View Status
+                        </a>
+                        <a href="{% url 'psn_integration:psn_disconnect' %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-unlink"></i> Disconnect
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="text-center">
+                        <i class="fab fa-playstation fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-3">Connect your PlayStation Network account to sync your trophies and get accurate skill-based rankings.</p>
+                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn psn-connect">
+                            <i class="fab fa-playstation"></i> Connect PSN Account
+                        </a>
+                    </div>
+                {% endif %}
             </div>
-            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Quick Stats Card -->
+        <div class="card mt-3 stats-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Quick Stats</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-primary mb-1">{{ profile_user.total_trophy_score|floatformat:0 }}</h5>
+                        <small class="text-muted">Trophy Score</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success mb-1">{{ total_trophies }}</h5>
+                        <small class="text-muted">Total Trophies</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
-        <h3>Recent Activity</h3>
-        <div class="profile-stats">
-            {% for progress in recent_progress %}
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <strong>{{ progress.game.title }}</strong>
-                    <br><small class="text-muted">{{ progress.progress_percentage }}% complete</small>
+
+    <!-- Right Content - Trophy Stats and Activity -->
+    <div class="col-md-8">
+        <!-- Trophy Statistics -->
+        <div class="card stats-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Trophy Collection</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <div class="trophy-stat">
+                            <i class="fas fa-medal trophy-platinum fa-2x mb-2"></i>
+                            <h4 class="mb-1">{{ profile_user.platinum_count }}</h4>
+                            <small>Platinum</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="trophy-stat">
+                            <i class="fas fa-medal trophy-gold fa-2x mb-2"></i>
+                            <h4 class="mb-1">{{ profile_user.gold_count }}</h4>
+                            <small>Gold</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="trophy-stat">
+                            <i class="fas fa-medal trophy-silver fa-2x mb-2"></i>
+                            <h4 class="mb-1">{{ profile_user.silver_count }}</h4>
+                            <small>Silver</small>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="trophy-stat">
+                            <i class="fas fa-medal trophy-bronze fa-2x mb-2"></i>
+                            <h4 class="mb-1">{{ profile_user.bronze_count }}</h4>
+                            <small>Bronze</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-end">
-                    <small class="text-muted">{{ progress.last_updated|date:"M d" }}</small>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-1">Trophy Score</h6>
+                            <h3 class="text-primary">{{ profile_user.total_trophy_score|floatformat:0 }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-1">Total Trophies</h6>
+                            <h3 class="text-success">{{ total_trophies }}</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6 class="text-muted mb-1">Trophy Level</h6>
+                            <h3 class="text-warning">{{ profile_user.current_trophy_level }}</h3>
+                        </div>
+                    </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted">No recent activity</p>
-            {% endfor %}
         </div>
+
+        <!-- Recent Trophy Activity -->
+        {% if recent_trophies %}
+        <div class="card mt-3 stats-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Trophies</h5>
+                <small class="text-muted">{{ recent_trophies|length }} recent</small>
+            </div>
+            <div class="card-body">
+                {% for user_trophy in recent_trophies %}
+                <div class="d-flex align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                    <div class="trophy-icon me-3">
+                        {% if user_trophy.trophy.icon_url %}
+                            <img src="{{ user_trophy.trophy.icon_url }}" alt="Trophy" width="40" height="40">
+                        {% else %}
+                            <i class="fas fa-trophy fa-2x trophy-{{ user_trophy.trophy.trophy_type }}"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">{{ user_trophy.trophy.name }}</h6>
+                        <p class="text-muted mb-1 small">{{ user_trophy.trophy.game.title }}</p>
+                        <small class="text-muted">
+                            <i class="fas fa-calendar-alt"></i> {{ user_trophy.earned_datetime|timesince }} ago
+                            • <i class="fas fa-star"></i> {{ user_trophy.trophy.calculate_score }} points
+                        </small>
+                    </div>
+                    <div class="trophy-type-badge">
+                        <span class="badge trophy-{{ user_trophy.trophy.trophy_type }}">
+                            {{ user_trophy.trophy.trophy_type|title }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Game Progress -->
+        {% if game_progress %}
+        <div class="card mt-3 stats-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-gamepad"></i> Game Progress</h5>
+                <small class="text-muted">{{ game_progress|length }} games</small>
+            </div>
+            <div class="card-body">
+                {% for progress in game_progress %}
+                <div class="game-progress-item">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h6 class="mb-1">{{ progress.game.title }}</h6>
+                            <small class="text-muted">
+                                Difficulty: <span class="difficulty-{{ progress.game.get_difficulty_category|lower }}">{{ progress.game.difficulty_multiplier }}x</span>
+                                • Platform: {{ progress.game.platform }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-primary">{{ progress.progress_percentage }}%</strong>
+                            <br>
+                            <small class="text-muted">{{ progress.total_score_earned }} pts</small>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ progress.progress_percentage }}%" 
+                             aria-valuenow="{{ progress.progress_percentage }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="row mt-2 text-center">
+                        <div class="col-3">
+                            <small class="text-muted">🥉 {{ progress.bronze_earned }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">🥈 {{ progress.silver_earned }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">🥇 {{ progress.gold_earned }}</small>
+                        </div>
+                        <div class="col-3">
+                            <small class="text-muted">🏆 {{ progress.platinum_earned }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- No Data Messages -->
+        {% if not profile_user.psn_id %}
+        <div class="card mt-3 stats-card">
+            <div class="card-body">
+                <div class="no-data-message">
+                    <i class="fab fa-playstation fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Trophy Data Available</h5>
+                    {% if user == profile_user %}
+                        <p class="text-muted mb-3">Connect your PlayStation Network account to start tracking your skill-based trophy scores!</p>
+                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn psn-connect">
+                            <i class="fab fa-playstation"></i> Connect PSN Account
+                        </a>
+                    {% else %}
+                        <p class="text-muted">This user hasn't connected their PlayStation Network account yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% elif not recent_trophies and not game_progress %}
+        <div class="card mt-3 stats-card">
+            <div class="card-body">
+                <div class="no-data-message">
+                    <i class="fas fa-sync fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Trophy Activity Yet</h5>
+                    {% if user == profile_user %}
+                        <p class="text-muted mb-3">Your PSN account is connected, but no trophy data has been synced yet.</p>
+                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Sync Trophies
+                        </a>
+                    {% else %}
+                        <p class="text-muted">This user hasn't synced their trophy data yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-{% if not user.psn_id %}
-<!-- PSN ID Setup Alert -->
-<div class="alert alert-info mt-4">
-    <h5><i class="fas fa-info-circle"></i> Complete Your Profile</h5>
-    <p class="mb-2">Add your PlayStation Network ID to start tracking your trophies!</p>
-    <a href="{% url 'users:profile_edit' %}" class="btn btn-primary">Add PSN ID</a>
+<!-- Profile Actions (for own profile) -->
+{% if user == profile_user %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card stats-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-cog"></i> Profile Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'psn_integration:psn_status' %}" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fab fa-playstation"></i> PSN Status
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/trophies/my-collection/" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-trophy"></i> My Trophies
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/rankings/" class="btn btn-outline-warning btn-sm w-100">
+                            <i class="fas fa-chart-line"></i> Rankings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add some interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to trophy stats
+    const trophyStats = document.querySelectorAll('.trophy-stat');
+    trophyStats.forEach(stat => {
+        stat.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+        });
+        stat.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Animate progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.transition = 'width 1s ease-in-out';
+            bar.style.width = width;
+        }, 100);
+    });
+});
+</script>
 {% endblock %}

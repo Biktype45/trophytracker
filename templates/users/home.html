@@ -3,11 +3,117 @@
 
 {% block title %}Trophy Tracker - Skill-Based PlayStation Trophy Rankings{% endblock %}
 
+<!-- ADD THIS STYLE BLOCK -->
+{% block extra_head %}
+<style>
+/* EMERGENCY CSS FIX - INLINE STYLES */
+.hero-section {
+    background: linear-gradient(135deg, #0071c1, #00439c) !important;
+    color: white !important;
+    padding: 3rem !important;
+    border-radius: 10px !important;
+    margin-bottom: 2rem !important;
+}
+
+.hero-section * {
+    color: white !important;
+}
+
+.hero-section h1 {
+    color: white !important;
+    font-size: 3rem !important;
+    font-weight: bold !important;
+}
+
+.hero-section p {
+    color: white !important;
+    font-size: 1.2rem !important;
+}
+
+.hero-section .lead {
+    color: white !important;
+    font-size: 1.4rem !important;
+}
+
+.btn-trophy {
+    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
+    color: #333 !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: bold !important;
+    border-radius: 5px !important;
+}
+
+.btn-outline-light {
+    color: white !important;
+    border: 2px solid white !important;
+    background: transparent !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 5px !important;
+}
+
+.btn-outline-light:hover {
+    background: white !important;
+    color: #0071c1 !important;
+}
+
+.card {
+    background: white !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+}
+
+.card h3 {
+    color: #0071c1 !important;
+}
+
+.card p {
+    color: #666 !important;
+}
+
+.game-card {
+    background: white !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+}
+
+.game-card h5 {
+    color: #333 !important;
+}
+
+.game-card p {
+    color: #666 !important;
+}
+
+.table th {
+    background-color: #0071c1 !important;
+    color: white !important;
+}
+
+.table td {
+    color: #333 !important;
+}
+
+.bg-light {
+    background: #f8f9fa !important;
+    color: #333 !important;
+}
+
+.bg-light h2, .bg-light h4 {
+    color: #333 !important;
+}
+
+.bg-light p {
+    color: #666 !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <div class="row">
     <div class="col-12">
-        <div class="bg-trophy-theme text-white p-5 rounded mb-4">
+        <div class="hero-section">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="display-4 fw-bold">🏆 Trophy Tracker</h1>
@@ -22,7 +128,7 @@
                 </div>
                 <div class="col-md-4 text-center">
                     <div class="trophy-animation">
-                        <i class="fas fa-trophy fa-5x text-trophy-gold"></i>
+                        <i class="fas fa-trophy fa-5x" style="color: #ffd700 !important;"></i>
                     </div>
                 </div>
             </div>

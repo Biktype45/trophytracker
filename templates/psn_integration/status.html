@@ -1,0 +1,82 @@
+<!-- =============================================================================
+File: templates/psn_integration/status.html
+PSN Status Template
+============================================================================= -->
+
+{% extends 'base.html' %}
+
+{% block title %}PlayStation Network Status{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fab fa-playstation"></i> PlayStation Network Status</h4>
+            </div>
+            <div class="card-body">
+                {% if psn_connected %}
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> Connected</h5>
+                        <p><strong>PSN ID:</strong> {{ psn_token.psn_online_id }}</p>
+                        <p><strong>Account ID:</strong> {{ psn_token.psn_account_id }}</p>
+                        <p><strong>Connected:</strong> {{ psn_token.created_at|date:"F d, Y H:i" }}</p>
+                        
+                        {% if token_expired %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Token Expired</strong> - Please reconnect your account.
+                            </div>
+                        {% else %}
+                            <p><strong>Token Expires:</strong> {{ psn_token.expires_at|date:"F d, Y H:i" }}</p>
+                        {% endif %}
+                        
+                        {% if psn_token.last_sync %}
+                            <p><strong>Last Sync:</strong> {{ psn_token.last_sync|timesince }} ago</p>
+                        {% else %}
+                            <p><strong>Last Sync:</strong> Never</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'psn_integration:psn_disconnect' %}" class="btn btn-outline-danger">
+                            <i class="fas fa-unlink"></i> Disconnect PSN Account
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Not Connected</h5>
+                        <p>Connect your PlayStation Network account to sync your trophies and get skill-based rankings.</p>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'psn_integration:psn_auth_start' %}" class="btn btn-primary">
+                            <i class="fab fa-playstation"></i> Connect PSN Account
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Debug Information (only in development) -->
+        {% if debug %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6>Debug Information</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <p><strong>User:</strong> {{ user.username }} (ID: {{ user.id }})</p>
+                    <p><strong>PSN Connected:</strong> {{ psn_connected }}</p>
+                    {% if psn_token %}
+                        <p><strong>Token Active:</strong> {{ psn_token.is_active }}</p>
+                        <p><strong>Token Expired:</strong> {{ token_expired }}</p>
+                        <p><strong>Sync Errors:</strong> {{ psn_token.sync_errors }}</p>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

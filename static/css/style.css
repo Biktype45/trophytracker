@@ -1,50 +1,518 @@
-/* static/css/style.css */
+/* Trophy Tracker Custom Styles - FIXED READABILITY */
+
 :root {
+    /* PlayStation Colors */
     --primary-color: #0071c1;
     --secondary-color: #00439c;
     --accent-color: #ffffff;
+    --gold-color: #ffd700;
+    --silver-color: #c0c0c0;
+    --bronze-color: #cd7f32;
+    --platinum-color: #e5e4e2;
+    
+    /* Difficulty Colors */
+    --easy-color: #28a745;
+    --medium-color: #ffc107;
+    --hard-color: #fd7e14;
+    --extreme-color: #dc3545;
+    
+    /* Text Colors */
+    --text-dark: #333333;
+    --text-light: #666666;
+    --text-muted: #999999;
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
+    line-height: 1.6;
+    color: var(--text-dark);
 }
 
+/* Navigation Fixes */
 .navbar-brand {
     font-weight: bold;
+    font-size: 1.5rem;
+    color: white !important;
 }
 
-/* Trophy level styling */
+.navbar-brand:hover {
+    color: var(--gold-color) !important;
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: white !important;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: var(--gold-color) !important;
+}
+
+/* Hero Section Fixes */
+.bg-trophy-theme {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white !important;
+}
+
+.bg-trophy-theme h1,
+.bg-trophy-theme h2,
+.bg-trophy-theme h3,
+.bg-trophy-theme h4,
+.bg-trophy-theme h5,
+.bg-trophy-theme h6 {
+    color: white !important;
+}
+
+.bg-trophy-theme p,
+.bg-trophy-theme .lead {
+    color: white !important;
+}
+
+/* Profile Header Fixes */
+.profile-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white !important;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.profile-header h1,
+.profile-header h2,
+.profile-header h3,
+.profile-header p,
+.profile-header small {
+    color: white !important;
+}
+
+/* Card and Content Fixes */
+.card {
+    background-color: white;
+    color: var(--text-dark);
+    border: 1px solid #dee2e6;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    color: var(--text-dark);
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-body {
+    color: var(--text-dark);
+}
+
+.card-title {
+    color: var(--text-dark) !important;
+}
+
+.card-text {
+    color: var(--text-light) !important;
+}
+
+/* Text Color Classes */
+.text-dark {
+    color: var(--text-dark) !important;
+}
+
+.text-light {
+    color: var(--text-light) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Trophy Level Styling */
 .trophy-level {
-    background: linear-gradient(45deg, #ffd700, #ffed4e);
-    color: #333;
+    background: linear-gradient(45deg, var(--gold-color), #ffed4e);
+    color: #333 !important;
     padding: 0.5rem 1rem;
     border-radius: 25px;
     font-weight: bold;
+    display: inline-block;
+    margin: 0.25rem 0;
 }
 
-/* Future trophy card styling */
+.trophy-level.platinum {
+    background: linear-gradient(45deg, var(--platinum-color), #f8f8ff);
+    color: #333 !important;
+}
+
+/* Trophy Type Badges */
+.trophy-bronze {
+    background-color: var(--bronze-color);
+    color: white !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+}
+
+.trophy-silver {
+    background-color: var(--silver-color);
+    color: #333 !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+}
+
+.trophy-gold {
+    background-color: var(--gold-color);
+    color: #333 !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+}
+
+.trophy-platinum {
+    background-color: var(--platinum-color);
+    color: #333 !important;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin: 0 0.25rem;
+}
+
+/* Difficulty Indicators */
+.difficulty-easy {
+    color: var(--easy-color) !important;
+    font-weight: bold;
+}
+
+.difficulty-medium {
+    color: var(--medium-color) !important;
+    font-weight: bold;
+}
+
+.difficulty-hard {
+    color: var(--hard-color) !important;
+    font-weight: bold;
+}
+
+.difficulty-extreme {
+    color: var(--extreme-color) !important;
+    font-weight: bold;
+}
+
+/* Cards and Components */
 .trophy-card {
-    transition: transform 0.2s;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: white;
 }
 
 .trophy-card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Add these styles to your style.css for better dropdown appearance */
-.dropdown-menu {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: none;
+.game-card {
+    transition: transform 0.2s ease-in-out;
     border-radius: 8px;
+    background-color: white;
+    border: 1px solid #dee2e6;
+}
+
+.game-card:hover {
+    transform: scale(1.02);
+}
+
+/* Progress Bars */
+.progress {
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+.progress-bar.level-progress {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+}
+
+/* Ranking Tables */
+.ranking-table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ranking-table th {
+    background-color: var(--primary-color);
+    color: white !important;
+    border: none;
+}
+
+.ranking-table td {
+    color: var(--text-dark) !important;
+}
+
+.ranking-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Profile Stats */
+.profile-stats {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: var(--text-dark);
+}
+
+.profile-stats h3 {
+    color: var(--text-dark) !important;
+}
+
+/* Buttons */
+.btn-trophy {
+    background: linear-gradient(45deg, var(--gold-color), #ffed4e);
+    border: none;
+    color: #333 !important;
+    font-weight: bold;
+}
+
+.btn-trophy:hover {
+    background: linear-gradient(45deg, #ffed4e, var(--gold-color));
+    color: #333 !important;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white !important;
+}
+
+/* Form Elements */
+.form-control {
+    color: var(--text-dark);
+    background-color: white;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+    color: var(--text-dark);
+    background-color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 113, 193, 0.25);
+}
+
+.form-label {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+/* Alerts */
+.alert {
+    color: var(--text-dark);
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.dropdown-item {
+    color: var(--text-dark) !important;
 }
 
 .dropdown-item:hover {
     background-color: var(--primary-color);
-    color: white;
+    color: white !important;
 }
 
-.navbar-brand:hover {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
+.dropdown-item-text {
+    color: var(--text-muted) !important;
+}
+
+/* Footer */
+footer {
+    background-color: #f8f9fa !important;
+    color: var(--text-dark);
+    margin-top: auto;
+}
+
+footer h5 {
+    color: var(--text-dark) !important;
+}
+
+footer p {
+    color: var(--text-light) !important;
+}
+
+footer a {
+    color: var(--text-dark) !important;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Badge Fixes */
+.badge {
+    color: white !important;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.badge.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+/* Animations */
+@keyframes trophyPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.trophy-earned {
+    animation: trophyPop 0.3s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-header {
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .trophy-level {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+}
+
+/* Loading States */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Utility Classes */
+.text-trophy-gold {
+    color: var(--gold-color) !important;
+}
+
+.text-trophy-silver {
+    color: var(--silver-color) !important;
+}
+
+.text-trophy-bronze {
+    color: var(--bronze-color) !important;
+}
+
+.text-trophy-platinum {
+    color: var(--platinum-color) !important;
+}
+
+/* Ensure all headings are readable */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-dark) !important;
+}
+
+/* Ensure all paragraphs are readable */
+p {
+    color: var(--text-light) !important;
+}
+
+/* Specific fixes for common Bootstrap classes */
+.text-center {
+    color: inherit !important;
+}
+
+.mb-4, .mt-4, .me-2, .ms-2 {
+    color: inherit !important;
+}
+
+/* Hero Section Fix */
+.hero-section {
+    background: linear-gradient(135deg, #0071c1, #00439c) !important;
+    color: white !important;
+}
+
+.hero-section h1,
+.hero-section h2,
+.hero-section h3,
+.hero-section h4,
+.hero-section h5,
+.hero-section h6 {
+    color: white !important;
+}
+
+.hero-section p,
+.hero-section .lead {
+    color: white !important;
+}
+
+.hero-section .text-white {
+    color: white !important;
+}
+
+/* Override any Bootstrap defaults */
+.hero-section * {
+    color: white !important;
+}
+
+/* Ensure buttons work properly */
+.hero-section .btn-trophy {
+    color: #333 !important;
+    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
+}
+
+.hero-section .btn-outline-light {
+    color: white !important;
+    border-color: white !important;
+}
+
+.hero-section .btn-outline-light:hover {
+    color: #0071c1 !important;
+    background-color: white !important;
 }

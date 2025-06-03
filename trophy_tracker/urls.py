@@ -22,8 +22,9 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
-    path('games/', include('games.urls')),  # We'll create this next
-    path('rankings/', include('rankings.urls')),  # We'll create this next
+    path('games/', include('games.urls')),  
+    path('rankings/', include('rankings.urls')),
+    path('psn/', include('psn_integration.urls')),  
 ]
 
 if settings.DEBUG:
