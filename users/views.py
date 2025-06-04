@@ -1,18 +1,20 @@
 # =============================================================================
-# File: users/views.py - SIMPLIFIED PSN INTEGRATION
-# Updated Users Views for Simplified PSN ID Registration Flow
+# File: users/views.py - FIXED VERSION
+# Updated Users Views with CustomLoginView and cleaned up imports
 # =============================================================================
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.urls import reverse_lazy
 from .forms import PSNRegistrationForm
 
 # Import PSNAWPService
@@ -36,11 +38,56 @@ except ImportError:
 
 User = get_user_model()
 
+class CustomLoginView(LoginView):
+    """Custom login view with redirect logic"""
+    template_name = 'users/login.html'
+    success_url = reverse_lazy('users:profile')
+    redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        # Redirect to profile after successful login
+        return reverse_lazy('users:profile')
+    
+    def form_valid(self, form):
+        """Handle successful login"""
+        response = super().form_valid(form)
+        user = form.get_user()
+        messages.success(self.request, f'Welcome back, {user.username}!')
+        return response
+    
+    def form_invalid(self, form):
+        """Handle failed login"""
+        messages.error(self.request, 'Invalid username or password.')
+        return super().form_invalid(form)
+
 def home(request):
-    """Home page view"""
+    """Home page view with featured content"""
+    
+    # Get some sample data for the home page
+    total_users = User.objects.count()
+    total_games = Game.objects.count() if Game else 0
+    
+    # Get top users for leaderboard preview
+    top_users = User.objects.filter(
+        total_trophy_score__gt=0
+    ).order_by('-total_trophy_score')[:10]
+    
+    # Get featured games (high difficulty or popular)
+    featured_games = []
+    if Game:
+        featured_games = Game.objects.filter(
+            difficulty_multiplier__gte=5.0
+        ).order_by('-difficulty_multiplier')[:6]
+        
+        # If no high-difficulty games, get any games
+        if not featured_games:
+            featured_games = Game.objects.all()[:6]
+    
     context = {
-        'total_users': User.objects.count(),
-        'total_games': Game.objects.count() if Game else 0,
+        'total_users': total_users,
+        'total_games': total_games,
+        'top_users': top_users,
+        'featured_games': featured_games,
     }
     return render(request, 'users/home.html', context)
 
@@ -89,6 +136,12 @@ def profile(request, username=None):
             return redirect('users:login')
         profile_user = request.user
     
+    # Check if profile is public (if viewing someone else's profile)
+    if username and username != request.user.username:
+        if not profile_user.profile_public:
+            messages.error(request, 'This profile is private.')
+            return redirect('users:home')
+    
     # Get trophy statistics
     total_trophies = (profile_user.bronze_count + profile_user.silver_count + 
                      profile_user.gold_count + profile_user.platinum_count)
@@ -114,9 +167,54 @@ def profile(request, username=None):
         'total_trophies': total_trophies,
         'recent_trophies': recent_trophies,
         'game_progress': game_progress,
+        'is_own_profile': profile_user == request.user if request.user.is_authenticated else False,
     }
     
     return render(request, 'users/profile.html', context)
+
+@login_required
+def profile_edit(request):
+    """Edit profile page"""
+    if request.method == 'POST':
+        # Handle profile updates
+        user = request.user
+        
+        # Update basic info
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        
+        # Validate and update username
+        if username and username != user.username:
+            if not User.objects.filter(username=username).exclude(id=user.id).exists():
+                user.username = username
+            else:
+                messages.error(request, 'Username already taken')
+                return redirect('users:profile_edit')
+        
+        # Update other fields
+        if email:
+            user.email = email
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        
+        # Update preferences
+        user.profile_public = request.POST.get('profile_public') == 'on'
+        user.show_rare_trophies = request.POST.get('show_rare_trophies') == 'on'
+        user.allow_trophy_sync = request.POST.get('allow_trophy_sync') == 'on'
+        
+        user.save()
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('users:profile')
+    
+    return render(request, 'users/profile_edit.html', {'user': request.user})
+
+def public_profile(request, username):
+    """Public profile view"""
+    return profile(request, username=username)
 
 @login_required
 def settings(request):
@@ -175,24 +273,6 @@ def settings(request):
     }
     
     return render(request, 'users/settings.html', context)
-
-def user_login(request):
-    """User login view"""
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f'Welcome back, {username}!')
-                return redirect('users:profile')
-        messages.error(request, 'Invalid username or password.')
-    else:
-        form = AuthenticationForm()
-    
-    return render(request, 'users/login.html', {'form': form})
 
 def user_logout(request):
     """User logout view"""

@@ -1,137 +1,86 @@
+# =============================================================================
+# games/admin.py
+# =============================================================================
 from django.contrib import admin
 from django.utils.html import format_html
-from django.db.models import Avg, Count
-from .models import Game, GameDifficultyRating
-
-class GameDifficultyRatingInline(admin.TabularInline):
-    """Inline admin for difficulty ratings"""
-    model = GameDifficultyRating
-    extra = 0
-    readonly_fields = ['user', 'difficulty_rating', 'created_at']
-    can_delete = False
+from .models import Game
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    """Admin interface for games"""
-    
     list_display = [
-        'title', 'platform', 'get_difficulty_display', 'get_total_trophies',
-        'completion_rate', 'players_count', 'admin_verified', 'last_synced'
+        'title', 'platform', 'get_difficulty_display', 'get_trophy_count_display',
+        'completion_rate', 'last_synced'
     ]
     
     list_filter = [
-        'platform', 'difficulty_multiplier', 'admin_verified', 
+        'platform', 'difficulty_category', 'difficulty_multiplier',
         'has_trophy_groups', 'created_at'
     ]
     
-    search_fields = ['title', 'np_communication_id', 'np_title_id', 'description']
+    search_fields = ['title', 'np_communication_id', 'publisher']
     
     readonly_fields = [
-        'np_communication_id', 'trophy_set_version', 'completion_rate',
-        'community_difficulty_rating', 'difficulty_rating_count',
-        'created_at', 'updated_at', 'last_synced'
+        'np_communication_id', 'last_synced', 'created_at', 'updated_at',
+        'get_max_score_display'
     ]
     
     fieldsets = (
         ('Game Information', {
             'fields': (
-                'title', 'description', 'platform', 'icon_url'
+                'np_communication_id', 'title', 'platform', 'publisher',
+                'description', 'icon_url', 'release_date'
             )
         }),
-        ('PlayStation API Data', {
+        ('Trophy Information', {
             'fields': (
-                'np_communication_id', 'np_title_id', 'np_service_name',
-                'trophy_set_version', 'has_trophy_groups'
-            )
-        }),
-        ('Trophy Counts', {
-            'fields': (
+                'has_trophy_groups', 'trophy_set_version',
                 ('bronze_count', 'silver_count'),
                 ('gold_count', 'platinum_count')
             )
         }),
-        ('Difficulty System', {
+        ('Difficulty & Scoring', {
             'fields': (
-                'difficulty_multiplier', 'admin_verified',
-                'community_difficulty_rating', 'difficulty_rating_count'
+                'difficulty_multiplier', 'difficulty_category',
+                'completion_rate', 'average_completion_time',
+                'get_max_score_display'
             )
         }),
-        ('Statistics', {
-            'fields': (
-                'completion_rate', 'players_count', 
-                'created_at', 'updated_at', 'last_synced'
-            )
+        ('Metadata', {
+            'fields': ('last_synced', 'created_at', 'updated_at')
         }),
     )
-    
-    inlines = [GameDifficultyRatingInline]
     
     def get_difficulty_display(self, obj):
         """Display difficulty with color coding"""
-        category = obj.get_difficulty_category()
-        color = self.get_difficulty_color(obj.difficulty_multiplier)
+        colors = {
+            'extremely_easy': '#28a745',
+            'easy': '#17a2b8',
+            'standard': '#ffc107',
+            'aaa_standard': '#007bff',
+            'grind_heavy': '#6f42c1',
+            'challenging': '#fd7e14',
+            'souls_like': '#dc3545',
+            'very_difficult': '#e83e8c',
+            'extremely_difficult': '#6c757d'
+        }
+        
+        color = colors.get(obj.difficulty_category, '#007bff')
         return format_html(
-            '<span style="color: {}; font-weight: bold;">{:.1f}x - {}</span>',
-            color, obj.difficulty_multiplier, category
+            '<span style="color: {}; font-weight: bold;">{:.1f}x</span>',
+            color, obj.difficulty_multiplier
         )
     get_difficulty_display.short_description = 'Difficulty'
     
-    def get_difficulty_color(self, multiplier):
-        """Return color based on difficulty multiplier"""
-        if multiplier <= 1.5:
-            return '#28a745'  # Green (Easy)
-        elif multiplier <= 3.0:
-            return '#ffc107'  # Yellow (Standard)
-        elif multiplier <= 6.0:
-            return '#fd7e14'  # Orange (Challenging)
-        else:
-            return '#dc3545'  # Red (Extreme)
-    
-    def get_total_trophies(self, obj):
-        """Display total trophy count"""
-        total = obj.get_total_trophy_count()
+    def get_trophy_count_display(self, obj):
+        """Display trophy counts with icons"""
         return format_html(
-            '<span title="Bronze: {} | Silver: {} | Gold: {} | Platinum: {}">{} trophies</span>',
-            obj.bronze_count, obj.silver_count, obj.gold_count, obj.platinum_count, total
+            '🥉{} 🥈{} 🥇{} 🏆{}',
+            obj.bronze_count, obj.silver_count, obj.gold_count, obj.platinum_count
         )
-    get_total_trophies.short_description = 'Total Trophies'
+    get_trophy_count_display.short_description = 'Trophies'
     
-    actions = ['verify_difficulty', 'update_from_psn', 'calculate_max_scores']
-    
-    def verify_difficulty(self, request, queryset):
-        """Mark games as admin verified"""
-        updated = queryset.update(admin_verified=True)
-        self.message_user(request, f"Verified {updated} games.")
-    verify_difficulty.short_description = "Mark as admin verified"
-    
-    def update_from_psn(self, request, queryset):
-        """Update game data from PSN API"""
-        # This will be implemented in PSN API integration
-        count = queryset.count()
-        self.message_user(request, f"Queued {count} games for PSN update.")
-    update_from_psn.short_description = "Update from PSN API"
-    
-    def calculate_max_scores(self, request, queryset):
-        """Calculate and display max possible scores"""
-        for game in queryset:
-            max_score = game.calculate_max_possible_score()
-            self.message_user(request, f"{game.title}: Max score = {max_score} points")
-    calculate_max_scores.short_description = "Calculate max possible scores"
-
-@admin.register(GameDifficultyRating)
-class GameDifficultyRatingAdmin(admin.ModelAdmin):
-    """Admin interface for community difficulty ratings"""
-    
-    list_display = ['game', 'user', 'difficulty_rating', 'created_at']
-    list_filter = ['difficulty_rating', 'created_at', 'game__platform']
-    search_fields = ['game__title', 'user__username', 'comment']
-    readonly_fields = ['created_at', 'updated_at']
-    
-    fieldsets = (
-        (None, {
-            'fields': ('game', 'user', 'difficulty_rating', 'comment')
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at')
-        }),
-    )
+    def get_max_score_display(self, obj):
+        """Display maximum possible score for this game"""
+        max_score = obj.calculate_max_possible_score()
+        return f"{max_score:,} points"
+    get_max_score_display.short_description = 'Max Score'

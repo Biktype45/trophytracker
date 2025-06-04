@@ -1,8 +1,4 @@
-# First, create settings folder structure
-# trophy_tracker/settings/__init__.py (empty file)
-# Move trophy_tracker/settings.py to trophy_tracker/settings/base.py
-
-# trophy_tracker/settings/base.py
+# trophy_tracker/settings/base.py - FIXED VERSION
 import os
 from pathlib import Path
 from decouple import config
@@ -10,9 +6,9 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Security
-SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = []
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
+DEBUG = config('DEBUG', default=True, cast=bool)
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.herokuapp.com']
 AUTH_USER_MODEL = 'users.User'
 
 # Application definition
@@ -28,7 +24,7 @@ INSTALLED_APPS = [
     'games',
     'trophies',
     'rankings',
-     'psn_integration',
+    'psn_integration',
 ]
 
 MIDDLEWARE = [
@@ -65,13 +61,21 @@ WSGI_APPLICATION = 'trophy_tracker.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+        'NAME': config('DB_NAME', default='trophy_tracker_db'),
+        'USER': config('DB_USER', default='postgres'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
+
+# Alternative: SQLite for development (uncomment if you don't want PostgreSQL)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -96,13 +100,14 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
 # Media files
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
@@ -117,4 +122,52 @@ PSN_AUTH_BASE_URL = config('PSN_AUTH_BASE_URL', default='https://ca.account.sony
 
 # Generate a 32-byte key for token encryption
 import base64
-PSN_TOKEN_ENCRYPTION_KEY = config('PSN_TOKEN_ENCRYPTION_KEY', default=base64.urlsafe_b64encode(b'your-32-byte-key-here-for-dev-only!').decode())
+PSN_TOKEN_ENCRYPTION_KEY = config(
+    'PSN_TOKEN_ENCRYPTION_KEY', 
+    default=base64.urlsafe_b64encode(b'your-32-byte-key-here-for-dev-only!').decode()
+)
+
+# Session settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+
+# Login/Logout URLs
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/profile/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'psn_integration': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+# Create logs directory
+import os
+logs_dir = BASE_DIR / 'logs'
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)

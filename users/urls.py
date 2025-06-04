@@ -1,4 +1,4 @@
-# users/urls.py
+# users/urls.py - FIXED VERSION
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
@@ -12,7 +12,7 @@ urlpatterns = [
     # User Authentication
     path('register/', views.register, name='register'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', views.user_logout, name='logout'),
     
     # Password Reset URLs
     path('password-reset/', 
@@ -61,6 +61,13 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('profile/edit/', views.profile_edit, name='profile_edit'),
     path('settings/', views.settings, name='settings'),
+    path('sync-progress/', views.sync_progress, name='sync_progress'),
+    
+    # AJAX endpoints
+    path('sync-trophies/', views.sync_trophies, name='sync_trophies'),
+    path('sync-status/', views.sync_status, name='sync_status'),
+    path('validate-psn/', views.validate_psn_id, name='validate_psn_id'),
+    path('disconnect-psn/', views.disconnect_psn, name='disconnect_psn'),
     
     # Public Profile URLs
     path('u/<str:username>/', views.public_profile, name='public_profile'),
