@@ -1,61 +1,412 @@
-{% extends 'base.html' %}
-
-{% block title %}Register - Trophy Tracker{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="text-center">🎮 Join Trophy Tracker</h3>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Trophy Tracker - Skill-Based PlayStation Rankings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .hero-gradient {
+            background: linear-gradient(135deg, #0071c1, #00439c);
+            color: white;
+        }
+        
+        .psn-id-input {
+            border: 2px solid #0071c1;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1.1rem;
+        }
+        
+        .psn-id-input:focus {
+            border-color: #00439c;
+            box-shadow: 0 0 0 0.2rem rgba(0, 113, 193, 0.25);
+        }
+        
+        .trophy-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .trophy-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .privacy-check {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .sync-preview {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .level-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                🏆 Trophy Tracker
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/login/">Login</a>
             </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                        {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-danger">{{ form.username.errors }}</div>
-                        {% endif %}
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient py-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Skill-Based Trophy Rankings</h1>
+                    <p class="lead mb-4">The first PlayStation trophy platform that rewards skill over quantity. No more Ratalaika inflation - every trophy is scored based on actual gaming skill required.</p>
+                    
+                    <div class="row text-center mb-4">
+                        <div class="col-4">
+                            <div class="h3 mb-1">20</div>
+                            <small>Trophy Levels</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h3 mb-1">10x</div>
+                            <small>Max Multiplier</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h3 mb-1">1,000+</div>
+                            <small>Rated Games</small>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                        {{ form.email }}
-                        {% if form.email.errors %}
-                            <div class="text-danger">{{ form.email.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.psn_id.id_for_label }}" class="form-label">PSN ID (Optional)</label>
-                        {{ form.psn_id }}
-                        <div class="form-text">{{ form.psn_id.help_text }}</div>
-                        {% if form.psn_id.errors %}
-                            <div class="text-danger">{{ form.psn_id.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
-                        {{ form.password1 }}
-                        {% if form.password1.errors %}
-                            <div class="text-danger">{{ form.password1.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
-                        {{ form.password2 }}
-                        {% if form.password2.errors %}
-                            <div class="text-danger">{{ form.password2.errors }}</div>
-                        {% endif %}
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Create Account</button>
-                </form>
+                </div>
                 
-                <div class="text-center mt-3">
-                    <a href="{% url 'users:login' %}">Already have an account? Login here</a>
+                <div class="col-lg-6">
+                    <div class="text-center">
+                        <i class="fas fa-trophy" style="font-size: 8rem; color: #ffd700;"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
+    </section>
+
+    <!-- Registration Form -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card trophy-card">
+                        <div class="card-header bg-primary text-white text-center">
+                            <h3 class="mb-0"><i class="fab fa-playstation me-2"></i>Join Trophy Tracker</h3>
+                            <small>Get your skill-based trophy ranking in 60 seconds</small>
+                        </div>
+                        
+                        <div class="card-body p-4">
+                            <form id="registrationForm" action="/register/" method="POST">
+                                <!-- Step 1: Basic Info -->
+                                <div class="registration-step" id="step1">
+                                    <h5 class="mb-3">Step 1: Create Your Account</h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" name="username" required>
+                                            <small class="text-muted">Choose a unique username for Trophy Tracker</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control" name="email" required>
+                                            <small class="text-muted">For account recovery and updates</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" name="password1" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Confirm Password</label>
+                                            <input type="password" class="form-control" name="password2" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-primary btn-lg w-100" onclick="nextStep()">
+                                        Continue to PSN Setup <i class="fas fa-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Step 2: PSN ID -->
+                                <div class="registration-step d-none" id="step2">
+                                    <h5 class="mb-3">Step 2: Connect Your PlayStation Profile</h5>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">PlayStation Network ID</label>
+                                        <input type="text" class="form-control psn-id-input" name="psn_id" id="psnIdInput" placeholder="Enter your PSN ID" required>
+                                        <small class="text-muted">This is your PlayStation Network username (not your real name)</small>
+                                    </div>
+
+                                    <!-- Privacy Requirements -->
+                                    <div class="privacy-check mb-4">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-shield-alt me-2"></i>Privacy Requirements
+                                        </h6>
+                                        
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Important:</strong> Your PlayStation profile must be set to <strong>Public</strong> for trophy sync to work.
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <h6>How to make your profile public:</h6>
+                                            <ol class="small">
+                                                <li>Go to <strong>Settings</strong> → <strong>Account Management</strong> → <strong>Privacy Settings</strong></li>
+                                                <li>Set <strong>"Profile"</strong> to <strong>Anyone</strong></li>
+                                                <li>Set <strong>"Trophies"</strong> to <strong>Anyone</strong></li>
+                                                <li>Set <strong>"Games"</strong> to <strong>Anyone</strong></li>
+                                            </ol>
+                                        </div>
+                                        
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="privacyConfirm" required>
+                                            <label class="form-check-label" for="privacyConfirm">
+                                                <strong>I confirm my PSN profile is set to public</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Preview -->
+                                    <div class="sync-preview mb-4">
+                                        <h6 class="mb-3"><i class="fas fa-magic me-2"></i>What happens next?</h6>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <i class="fas fa-download fa-2x mb-2"></i>
+                                                <div class="small">Sync Your Trophies</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <i class="fas fa-calculator fa-2x mb-2"></i>
+                                                <div class="small">Calculate Skill Score</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                                <div class="small">See Your Ranking</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                                            <i class="fas fa-arrow-left me-2"></i>Back
+                                        </button>
+                                        <button type="submit" class="btn btn-success btn-lg flex-fill">
+                                            <i class="fab fa-playstation me-2"></i>Create Account & Sync Trophies
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="bg-light py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">How Our Skill-Based System Works</h2>
+            
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card trophy-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-gamepad fa-3x text-primary mb-3"></i>
+                            <h5>Game Difficulty Rating</h5>
+                            <p class="small text-muted">Every game gets a multiplier from 1.0x (Ratalaika) to 10.0x (Elite difficulty) based on skill required.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card trophy-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                            <h5>Smart Trophy Scoring</h5>
+                            <p class="small text-muted">Trophy Score = Base Points (Bronze: 1, Silver: 3, Gold: 6, Platinum: 15) × Game Multiplier</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card trophy-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-level-up-alt fa-3x text-success mb-3"></i>
+                            <h5>20 Trophy Levels</h5>
+                            <p class="small text-muted">From "PS Noob" to "Maybe I Was The PlayStation All Along" - progression based on actual skill.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card trophy-card h-100">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                            <h5>Global Rankings</h5>
+                            <p class="small text-muted">Weekly, monthly, and all-time leaderboards. Category rankings for different game types.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">See the Difference</h2>
+            
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">❌ Traditional Systems</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Easy Ratalaika Game:</strong>
+                                <div class="text-muted">Platinum = 1 trophy = Same value as any other platinum</div>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Dark Souls III:</strong>
+                                <div class="text-muted">Platinum = 1 trophy = Same value as Ratalaika</div>
+                            </div>
+                            <div class="alert alert-danger">
+                                <strong>Result:</strong> Easy games inflate rankings unfairly
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 mb-4">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">✅ Trophy Tracker System</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>Easy Ratalaika Game (1.0x):</strong>
+                                <div class="text-muted">Platinum = 15 × 1.0 = <strong>15 points</strong></div>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Dark Souls III (6.0x):</strong>
+                                <div class="text-muted">Platinum = 15 × 6.0 = <strong>90 points</strong></div>
+                            </div>
+                            <div class="alert alert-success">
+                                <strong>Result:</strong> Skill-based games get the recognition they deserve!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            <p>&copy; 2025 Trophy Tracker. Built for the PlayStation community.</p>
+            <p class="small text-muted">Finally, a trophy tracking platform that values skill over quantity.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function nextStep() {
+            // Basic validation for step 1
+            const username = document.querySelector('input[name="username"]').value;
+            const email = document.querySelector('input[name="email"]').value;
+            const password1 = document.querySelector('input[name="password1"]').value;
+            const password2 = document.querySelector('input[name="password2"]').value;
+            
+            if (!username || !email || !password1 || !password2) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password1 !== password2) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            // Hide step 1, show step 2
+            document.getElementById('step1').classList.add('d-none');
+            document.getElementById('step2').classList.remove('d-none');
+            
+            // Focus on PSN ID input
+            document.getElementById('psnIdInput').focus();
+        }
+        
+        function prevStep() {
+            // Hide step 2, show step 1
+            document.getElementById('step2').classList.add('d-none');
+            document.getElementById('step1').classList.remove('d-none');
+        }
+        
+        // Real-time PSN ID validation (optional)
+        document.getElementById('psnIdInput').addEventListener('input', function(e) {
+            const psnId = e.target.value;
+            if (psnId.length >= 3) {
+                // Could add AJAX validation here
+                console.log('Validating PSN ID:', psnId);
+            }
+        });
+        
+        // Form submission
+        document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const psnId = document.getElementById('psnIdInput').value;
+            const privacyConfirm = document.getElementById('privacyConfirm').checked;
+            
+            if (!psnId) {
+                alert('Please enter your PSN ID');
+                return;
+            }
+            
+            if (!privacyConfirm) {
+                alert('Please confirm your PSN profile is public');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            submitBtn.disabled = true;
+            
+            // Submit form (in real implementation)
+            console.log('Submitting registration with PSN ID:', psnId);
+            
+            // Simulate redirect to success page
+            setTimeout(() => {
+                window.location.href = '/sync-progress/';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Trophy Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .settings-header {
+            background: linear-gradient(135deg, #0071c1, #00439c);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-header {
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            color: #0071c1;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .psn-status {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .psn-status.connected {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .psn-status.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .status-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+        }
+        
+        .status-icon.connected {
+            color: #28a745;
+        }
+        
+        .status-icon.error {
+            color: #dc3545;
+        }
+        
+        .privacy-requirements {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .sync-preferences {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .preference-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .preference-item:last-child {
+            border-bottom: none;
+        }
+        
+        .form-check-input:checked {
+            background-color: #0071c1;
+            border-color: #0071c1;
+        }
+        
+        .danger-zone {
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: rgba(220, 53, 69, 0.05);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .last-sync-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .sync-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .sync-stat {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .sync-stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0071c1;
+        }
+        
+        .sync-stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                🏆 Trophy Tracker
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/profile/">Profile</a>
+                <a class="nav-link" href="/rankings/">Rankings</a>
+                <a class="nav-link" href="/games/">Games</a>
+                <a class="nav-link active" href="/settings/">Settings</a>
+                <a class="nav-link" href="/logout/">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Settings Header -->
+    <section class="settings-header">
+        <div class="container">
+            <h1 class="mb-3">
+                <i class="fas fa-cog me-3"></i>Settings
+            </h1>
+            <p class="mb-0">Manage your PlayStation Network connection and sync preferences</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- PSN Connection -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4 class="section-title">
+                            <i class="fab fa-playstation me-2"></i>PlayStation Network Connection
+                        </h4>
+                    </div>
+                    
+                    <!-- PSN Status -->
+                    <div class="psn-status connected" id="psnStatus">
+                        <i class="fas fa-check-circle status-icon connected"></i>
+                        <div class="flex-fill">
+                            <div class="fw-bold">Connected to PSN</div>
+                            <div class="small text-muted">PSN ID: <span id="connectedPsnId">TrophyHunter_PSN</span></div>
+                        </div>
+                        <div class="small text-muted">
+                            Connected 5 days ago
+                        </div>
+                    </div>
+                    
+                    <!-- PSN ID Management -->
+                    <form id="psnForm">
+                        <div class="mb-3">
+                            <label for="psnIdInput" class="form-label fw-bold">PlayStation Network ID</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="psnIdInput" 
+                                       value="TrophyHunter_PSN" placeholder="Enter your PSN ID">
+                                <button class="btn btn-outline-primary" type="button" id="validateBtn">
+                                    <i class="fas fa-check me-1"></i>Validate
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                This is your PlayStation Network username (not your real name)
+                            </div>
+                        </div>
+                        
+                        <div class="privacy-requirements">
+                            <h6 class="text-warning mb-2">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Privacy Requirements
+                            </h6>
+                            <p class="small mb-2">
+                                Your PlayStation profile must be set to <strong>Public</strong> for trophy sync to work properly.
+                            </p>
+                            <details class="small">
+                                <summary class="text-primary" style="cursor: pointer;">How to make your profile public</summary>
+                                <ol class="mt-2 mb-0">
+                                    <li>Go to <strong>Settings</strong> → <strong>Account Management</strong> → <strong>Privacy Settings</strong></li>
+                                    <li>Set <strong>"Profile"</strong> to <strong>Anyone</strong></li>
+                                    <li>Set <strong>"Trophies"</strong> to <strong>Anyone</strong></li>
+                                    <li>Set <strong>"Games"</strong> to <strong>Anyone</strong></li>
+                                </ol>
+                            </details>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update PSN ID
+                            </button>
+                            <button type="button" class="btn btn-success" id="testSyncBtn">
+                                <i class="fas fa-sync me-2"></i>Test Sync
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sync Preferences -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4 class="section-title">
+                            <i class="fas fa-sync me-2"></i>Sync Preferences
+                        </h4>
+                    </div>
+                    
+                    <div class="sync-preferences">
+                        <div class="preference-item">
+                            <div>
+                                <div class="fw-bold">Automatic Sync</div>
+                                <div class="small text-muted">Automatically sync trophies when you visit your profile</div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="autoSync" checked>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div>
+                                <div class="fw-bold">Sync Notifications</div>
+                                <div class="small text-muted">Show notifications when new trophies are found</div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="syncNotifications" checked>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div>
+                                <div class="fw-bold">Include Hidden Trophies</div>
+                                <div class="small text-muted">Sync and display hidden/secret trophies</div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="includeHidden" checked>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div>
+                                <div class="fw-bold">Public Profile</div>
+                                <div class="small text-muted">Make your trophy profile visible to other users</div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="publicProfile" checked>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Management -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h4 class="section-title">
+                            <i class="fas fa-user me-2"></i>Account Management
+                        </h4>
+                    </div>
+                    
+                    <form id="accountForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="usernameInput" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="usernameInput" value="TrophyHunter2025">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emailInput" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="emailInput" value="hunter@example.com">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="timezoneSelect" class="form-label">Timezone</label>
+                            <select class="form-select" id="timezoneSelect">
+                                <option value="UTC">UTC (Coordinated Universal Time)</option>
+                                <option value="America/New_York">Eastern Time (ET)</option>
+                                <option value="America/Chicago">Central Time (CT)</option>
+                                <option value="America/Denver">Mountain Time (MT)</option>
+                                <option value="America/Los_Angeles" selected>Pacific Time (PT)</option>
+                                <option value="Europe/London">GMT (Greenwich Mean Time)</option>
+                                <option value="Europe/Paris">CET (Central European Time)</option>
+                                <option value="Asia/Tokyo">JST (Japan Standard Time)</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="settings-section">
+                    <div class="danger-zone">
+                        <h5 class="text-danger mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <h6>Disconnect PSN Account</h6>
+                            <p class="small text-muted mb-2">
+                                This will remove your PSN connection but keep your Trophy Tracker account. 
+                                You can reconnect later, but sync history will be reset.
+                            </p>
+                            <button class="btn btn-outline-danger" onclick="disconnectPSN()">
+                                <i class="fab fa-playstation me-2"></i>Disconnect PSN
+                            </button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div>
+                            <h6>Delete Account</h6>
+                            <p class="small text-muted mb-2">
+                                This will permanently delete your Trophy Tracker account and all associated data. 
+                                This action cannot be undone.
+                            </p>
+                            <button class="btn btn-danger" onclick="deleteAccount()">
+                                <i class="fas fa-trash me-2"></i>Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Last Sync Info -->
+                <div class="settings-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-history me-2"></i>Last Sync
+                    </h5>
+                    
+                    <div class="last-sync-info">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small text-muted">Status:</span>
+                            <span class="badge bg-success">Successful</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small text-muted">Time:</span>
+                            <span class="small">2 hours ago</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small text-muted">Duration:</span>
+                            <span class="small">47 seconds</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="small text-muted">New Trophies:</span>
+                            <span class="small fw-bold text-success">+3</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-stats">
+                        <div class="sync-stat">
+                            <div class="sync-stat-number">23</div>
+                            <div class="sync-stat-label">Total Syncs</div>
+                        </div>
+                        <div class="sync-stat">
+                            <div class="sync-stat-number">98%</div>
+                            <div class="sync-stat-label">Success Rate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help & Support -->
+                <div class="settings-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-question-circle me-2"></i>Help & Support
+                    </h5>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="/help/" class="btn btn-outline-primary">
+                            <i class="fas fa-book me-2"></i>View Help Docs
+                        </a>
+                        <a href="/contact/" class="btn btn-outline-secondary">
+                            <i class="fas fa-envelope me-2"></i>Contact Support
+                        </a>
+                        <a href="/privacy/" class="btn btn-outline-secondary">
+                            <i class="fas fa-shield-alt me-2"></i>Privacy Policy
+                        </a>
+                    </div>
+                    
+                    <div class="mt-3 small text-muted">
+                        <div class="mb-1">
+                            <strong>Version:</strong> 2.1.0
+                        </div>
+                        <div>
+                            <strong>API:</strong> PlayStation API v2
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form handlers
+        document.getElementById('psnForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const psnId = document.getElementById('psnIdInput').value.trim();
+            
+            if (!psnId) {
+                alert('Please enter a PSN ID');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Update connected PSN ID
+                document.getElementById('connectedPsnId').textContent = psnId;
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                
+                // Show success message
+                showToast('PSN ID updated successfully!', 'success');
+            }, 2000);
+        });
+
+        document.getElementById('accountForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                showToast('Account settings saved successfully!', 'success');
+            }, 1500);
+        });
+
+        // Validate PSN ID
+        document.getElementById('validateBtn').addEventListener('click', function() {
+            const psnId = document.getElementById('psnIdInput').value.trim();
+            
+            if (!psnId) {
+                showToast('Please enter a PSN ID to validate', 'warning');
+                return;
+            }
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validating...';
+            btn.disabled = true;
+            
+            // Simulate validation
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                
+                // Update status
+                const status = document.getElementById('psnStatus');
+                status.className = 'psn-status connected';
+                status.innerHTML = `
+                    <i class="fas fa-check-circle status-icon connected"></i>
+                    <div class="flex-fill">
+                        <div class="fw-bold">PSN ID Validated</div>
+                        <div class="small text-muted">Profile is public and accessible</div>
+                    </div>
+                    <div class="small text-muted">
+                        Just validated
+                    </div>
+                `;
+                
+                showToast('PSN ID validation successful!', 'success');
+            }, 2000);
+        });
+
+        // Test sync
+        document.getElementById('testSyncBtn').addEventListener('click', function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                showToast('Sync test completed successfully! Found 2 new trophies.', 'success');
+            }, 3000);
+        });
+
+        // Save preferences when changed
+        document.querySelectorAll('.form-check-input').forEach(input => {
+            input.addEventListener('change', function() {
+                showToast('Preference updated', 'info');
+            });
+        });
+
+        // Disconnect PSN
+        function disconnectPSN() {
+            if (confirm('Are you sure you want to disconnect your PSN account? This will remove sync capability but keep your Trophy Tracker account.')) {
+                showToast('PSN account disconnected', 'warning');
+                
+                // Update status
+                const status = document.getElementById('psnStatus');
+                status.className = 'psn-status error';
+                status.innerHTML = `
+                    <i class="fas fa-times-circle status-icon error"></i>
+                    <div class="flex-fill">
+                        <div class="fw-bold">PSN Disconnected</div>
+                        <div class="small text-muted">Update your PSN ID below to reconnect</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Delete account
+        function deleteAccount() {
+            const confirmation = prompt('This will permanently delete your account. Type "DELETE" to confirm:');
+            if (confirmation === 'DELETE') {
+                alert('Account deletion would be processed. (This is a demo - account not actually deleted)');
+            }
+        }
+
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Auto-save preferences
+        function autoSave() {
+            const preferences = {
+                autoSync: document.getElementById('autoSync').checked,
+                syncNotifications: document.getElementById('syncNotifications').checked,
+                includeHidden: document.getElementById('includeHidden').checked,
+                publicProfile: document.getElementById('publicProfile').checked
+            };
+            
+            // In real implementation, save to backend
+            localStorage.setItem('trophyTrackerPreferences', JSON.stringify(preferences));
+        }
+
+        // Load preferences on page load
+        function loadPreferences() {
+            const saved = localStorage.getItem('trophyTrackerPreferences');
+            if (saved) {
+                const preferences = JSON.parse(saved);
+                document.getElementById('autoSync').checked = preferences.autoSync ?? true;
+                document.getElementById('syncNotifications').checked = preferences.syncNotifications ?? true;
+                document.getElementById('includeHidden').checked = preferences.includeHidden ?? true;
+                document.getElementById('publicProfile').checked = preferences.publicProfile ?? true;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPreferences();
+            
+            // Add auto-save to all preference toggles
+            document.querySelectorAll('.form-check-input').forEach(input => {
+                input.addEventListener('change', autoSave);
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S to save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                const activeForm = document.querySelector('form:hover') || document.getElementById('psnForm');
+                activeForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>

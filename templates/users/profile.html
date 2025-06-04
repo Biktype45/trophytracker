@@ -1,462 +1,808 @@
-<!-- =============================================================================
-File: templates/users/profile.html
-Fixed Profile Template with Proper Django Syntax
-============================================================================= -->
-
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}{{ profile_user.username }}'s Profile - Trophy Tracker{% endblock %}
-
-{% block extra_head %}
-<style>
-/* Profile-specific styles */
-.profile-header {
-    background: linear-gradient(135deg, #0071c1, #00439c) !important;
-    color: white !important;
-    border-radius: 10px !important;
-}
-
-.profile-header * {
-    color: white !important;
-}
-
-.trophy-level {
-    background: linear-gradient(45deg, #ffd700, #ffed4e) !important;
-    color: #333 !important;
-    padding: 0.5rem 1rem !important;
-    border-radius: 25px !important;
-    font-weight: bold !important;
-    display: inline-block !important;
-    margin: 0.25rem 0 !important;
-}
-
-.trophy-stat {
-    padding: 1rem;
-    text-align: center;
-    transition: transform 0.2s ease;
-}
-
-.trophy-stat:hover {
-    transform: translateY(-2px);
-}
-
-.trophy-platinum { color: #e5e4e2; }
-.trophy-gold { color: #ffd700; }
-.trophy-silver { color: #c0c0c0; }
-.trophy-bronze { color: #cd7f32; }
-
-.psn-connected {
-    background: linear-gradient(45deg, #0071c1, #00439c);
-    border: none;
-}
-
-.psn-connect {
-    background: linear-gradient(45deg, #28a745, #20c997);
-    border: none;
-    color: white;
-    transition: transform 0.2s ease;
-}
-
-.psn-connect:hover {
-    transform: translateY(-2px);
-    color: white;
-}
-
-.game-progress-item {
-    padding: 1rem;
-    border: 1px solid #dee2e6;
-    border-radius: 0.375rem;
-    background: #f8f9fa;
-    margin-bottom: 1rem;
-    transition: box-shadow 0.2s ease;
-}
-
-.game-progress-item:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.difficulty-extremely-easy, .difficulty-easy { color: #28a745; font-weight: bold; }
-.difficulty-standard { color: #ffc107; font-weight: bold; }
-.difficulty-aaa-standard, .difficulty-grind-heavy { color: #fd7e14; font-weight: bold; }
-.difficulty-challenging, .difficulty-souls-like, .difficulty-very-difficult, .difficulty-extremely-difficult { 
-    color: #dc3545; font-weight: bold; 
-}
-
-.level-progress {
-    background: linear-gradient(45deg, #0071c1, #00439c) !important;
-}
-
-.trophy-icon img {
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.trophy-type-badge .badge {
-    font-size: 0.75em;
-}
-
-.trophy-type-badge .badge.trophy-platinum {
-    background-color: #e5e4e2 !important;
-    color: #333 !important;
-}
-
-.trophy-type-badge .badge.trophy-gold {
-    background-color: #ffd700 !important;
-    color: #333 !important;
-}
-
-.trophy-type-badge .badge.trophy-silver {
-    background-color: #c0c0c0 !important;
-    color: #333 !important;
-}
-
-.trophy-type-badge .badge.trophy-bronze {
-    background-color: #cd7f32 !important;
-    color: white !important;
-}
-
-.no-data-message {
-    text-align: center;
-    padding: 2rem;
-    color: #6c757d;
-}
-
-.stats-card {
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
-}
-
-.stats-card:hover {
-    transform: translateY(-2px);
-}
-
-/* Debug styles */
-.debug-section {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 5px;
-    padding: 1rem;
-    margin: 1rem 0;
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="row">
-    <!-- Left Sidebar - User Info and PSN -->
-    <div class="col-md-4">
-        <!-- Profile Header Card -->
-        <div class="card profile-header">
-            <div class="card-body text-center">
-                {% if profile_user.psn_avatar_url %}
-                    <img src="{{ profile_user.psn_avatar_url }}" alt="PSN Avatar" class="rounded-circle mb-3" width="100" height="100">
-                {% else %}
-                    <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                        <i class="fas fa-user fa-2x text-white"></i>
-                    </div>
-                {% endif %}
-                
-                <h3 class="text-white mb-1">{{ profile_user.username }}</h3>
-                {% if profile_user.psn_id %}
-                    <p class="text-white-50 mb-3">
-                        <i class="fab fa-playstation"></i> {{ profile_user.psn_id }}
-                    </p>
-                {% endif %}
-                
-                <div class="trophy-level mb-3">
-                    Level {{ profile_user.current_trophy_level }}: {{ profile_user.get_trophy_level_name }}
-                </div>
-                
-                <!-- Level Progress Bar -->
-                <div class="progress mb-3" style="height: 8px; background: rgba(255,255,255,0.2);">
-                    <div class="progress-bar level-progress" role="progressbar" 
-                         style="width: {{ profile_user.level_progress_percentage }}%" 
-                         aria-valuenow="{{ profile_user.level_progress_percentage }}" 
-                         aria-valuemin="0" aria-valuemax="100">
-                    </div>
-                </div>
-                <small class="text-white-50">{{ profile_user.level_progress_percentage|floatformat:1 }}% to next level</small>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Trophy Profile - Trophy Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .profile-header {
+            background: linear-gradient(135deg, #0071c1, #00439c);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .psn-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+        }
+        
+        .trophy-level-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-block;
+            margin: 1rem 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-container {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .level-progress {
+            background: rgba(255, 255, 255, 0.3);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .level-progress-bar {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.6s ease;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .trophy-breakdown {
+            display: flex;
+            justify-content: space-around;
+            margin: 1.5rem 0;
+        }
+        
+        .trophy-count {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .trophy-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .bronze { color: #cd7f32; }
+        .silver { color: #c0c0c0; }
+        .gold { color: #ffd700; }
+        .platinum { color: #e5e4e2; }
+        
+        .sync-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sync-button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .sync-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+        
+        .sync-button:disabled {
+            background: #6c757d;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .recent-games {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .game-item:hover {
+            background: #f8f9fa;
+            border-color: #0071c1;
+        }
+        
+        .game-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin-right: 1rem;
+            object-fit: cover;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+        
+        .game-info {
+            flex: 1;
+        }
+        
+        .game-title {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .game-platform {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .game-difficulty {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 1rem;
+        }
+        
+        .difficulty-1x { background: #d4edda; color: #155724; }
+        .difficulty-3x { background: #d1ecf1; color: #0c5460; }
+        .difficulty-6x { background: #fff3cd; color: #856404; }
+        .difficulty-10x { background: #f8d7da; color: #721c24; }
+        
+        .ranking-preview {
+            background: linear-gradient(135deg, #6f42c1, #495057);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        
+        .rank-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .last-sync {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .trophy-progress-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#0071c1 var(--progress, 0%), #e9ecef 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+        
+        .trophy-progress-ring::before {
+            content: '';
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+        
+        .trophy-progress-ring .progress-text {
+            z-index: 1;
+            font-weight: bold;
+            color: #0071c1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                🏆 Trophy Tracker
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/rankings/">Rankings</a>
+                <a class="nav-link" href="/games/">Games</a>
+                <a class="nav-link" href="/settings/">Settings</a>
+                <a class="nav-link" href="/logout/">Logout</a>
             </div>
         </div>
+    </nav>
 
-        <!-- PSN Integration Card -->
-        {% if user.is_authenticated and user.username == profile_user.username %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fab fa-playstation"></i> PlayStation Network</h5>
-            </div>
-            <div class="card-body">
-                {% if profile_user.psn_id %}
-                    <!-- Connected State -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <strong>{{ profile_user.psn_id }}</strong>
-                            <br>
-                            <small class="text-muted">Connected Account</small>
+    <!-- Profile Header -->
+    <section class="profile-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="avatar-section">
+                        <img src="https://via.placeholder.com/120x120/0071c1/ffffff?text=PSN" 
+                             alt="PSN Avatar" class="psn-avatar" id="psnAvatar">
+                        <div class="mt-2">
+                            <i class="fab fa-playstation me-2"></i>
+                            <span id="psnId">YourPSNID</span>
                         </div>
-                        <span class="badge bg-success"><i class="fas fa-check-circle"></i> Connected</span>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <h1 class="mb-3" id="username">TrophyHunter2025</h1>
+                    <div class="trophy-level-badge" id="trophyLevel">
+                        Level 5: Digital Collector
+                    </div>
+                    <div class="score-display" id="totalScore">
+                        4,250 points
                     </div>
                     
+                    <div class="progress-container">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Progress to Level 6</span>
+                            <span id="progressText">2,400 / 3,850 points</span>
+                        </div>
+                        <div class="level-progress">
+                            <div class="level-progress-bar" id="progressBar" style="width: 62%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <div class="trophy-breakdown">
+                        <div class="trophy-count">
+                            <div class="trophy-icon bronze">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="fw-bold" id="bronzeCount">145</div>
+                            <div class="small">Bronze</div>
+                        </div>
+                        <div class="trophy-count">
+                            <div class="trophy-icon silver">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="fw-bold" id="silverCount">42</div>
+                            <div class="small">Silver</div>
+                        </div>
+                        <div class="trophy-count">
+                            <div class="trophy-icon gold">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="fw-bold" id="goldCount">28</div>
+                            <div class="small">Gold</div>
+                        </div>
+                        <div class="trophy-count">
+                            <div class="trophy-icon platinum">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="fw-bold" id="platinumCount">8</div>
+                            <div class="small">Platinum</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number text-primary" id="totalGames">23</div>
+                        <div class="stat-label">Games Played</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-success" id="completedGames">8</div>
+                        <div class="stat-label">100% Complete</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-warning" id="averageCompletion">67%</div>
+                        <div class="stat-label">Avg Completion</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-info" id="totalTrophies">223</div>
+                        <div class="stat-label">Total Trophies</div>
+                    </div>
+                </div>
+
+                <!-- Recent Games -->
+                <div class="recent-games">
+                    <h4 class="mb-3">
+                        <i class="fas fa-gamepad me-2"></i>Recent Games
+                    </h4>
+                    
+                    <div class="game-item">
+                        <div class="game-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="game-info">
+                            <div class="game-title">Dark Souls III</div>
+                            <div class="game-platform">PlayStation 4</div>
+                        </div>
+                        <div class="game-difficulty difficulty-6x">6.0x</div>
+                        <div class="ms-3 text-end">
+                            <div class="fw-bold">95%</div>
+                            <div class="small text-muted">+540 pts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-item">
+                        <div class="game-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="game-info">
+                            <div class="game-title">Spider-Man: Miles Morales</div>
+                            <div class="game-platform">PlayStation 5</div>
+                        </div>
+                        <div class="game-difficulty difficulty-3x">3.0x</div>
+                        <div class="ms-3 text-end">
+                            <div class="fw-bold">100%</div>
+                            <div class="small text-muted">+285 pts</div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-item">
+                        <div class="game-icon">
+                            <i class="fas fa-gamepad"></i>
+                        </div>
+                        <div class="game-info">
+                            <div class="game-title">Horizon Zero Dawn</div>
+                            <div class="game-platform">PlayStation 4</div>
+                        </div>
+                        <div class="game-difficulty difficulty-3x">3.0x</div>
+                        <div class="ms-3 text-end">
+                            <div class="fw-bold">78%</div>
+                            <div class="small text-muted">+210 pts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Global Ranking -->
+                <div class="ranking-preview">
+                    <h5 class="mb-3">Global Ranking</h5>
+                    <div class="rank-number">#2,847</div>
+                    <div class="mb-3">of 15,420 players</div>
+                    <div class="small">Top 18% worldwide</div>
+                    <a href="/rankings/" class="btn btn-outline-light btn-sm mt-3">
+                        View Full Rankings
+                    </a>
+                </div>
+
+                <!-- Trophy Sync -->
+                <div class="sync-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-sync me-2"></i>Trophy Sync
+                    </h5>
+                    
                     <div class="d-grid gap-2">
-                        <a href="/psn/sync/" class="btn btn-primary btn-sm">
-                            <i class="fas fa-sync"></i> Sync Trophies
-                        </a>
-                        <a href="/psn/status/" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-info-circle"></i> View Status
-                        </a>
-                        <a href="/psn/disconnect/" class="btn btn-outline-danger btn-sm">
-                            <i class="fas fa-unlink"></i> Disconnect
-                        </a>
+                        <button class="btn sync-button" id="syncButton" onclick="startSync()">
+                            <i class="fas fa-download me-2"></i>Sync Trophies
+                        </button>
                     </div>
-                {% else %}
-                    <!-- Not Connected State - DEBUG VERSION -->
+                    
+                    <div class="last-sync" id="lastSync">
+                        Last synced: 2 hours ago
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Sync typically takes 30-60 seconds
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level Progress -->
+                <div class="sync-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-line me-2"></i>Level Progress
+                    </h5>
+                    
+                    <div class="trophy-progress-ring" style="--progress: 62%">
+                        <div class="progress-text">62%</div>
+                    </div>
+                    
                     <div class="text-center">
-                        <i class="fab fa-playstation fa-3x text-muted mb-3"></i>
-                        <p class="text-muted mb-3">Connect your PlayStation Network account to sync your trophies and get accurate skill-based rankings.</p>
-                        
-                        <!-- Debug: Multiple button versions to test -->
-                        <div class="d-grid gap-2">
-                            <!-- Button 1: Original -->
-                            <a href="/psn/auth/start/" class="btn psn-connect" id="psn-btn-1">
-                                <i class="fab fa-playstation"></i> Connect PSN Account (v1)
-                            </a>
-                            
-                            <!-- Button 2: Simple version -->
-                            <a href="/psn/auth/start/" class="btn btn-success" id="psn-btn-2">
-                                <i class="fab fa-playstation"></i> Connect PSN Account (v2)
-                            </a>
-                            
-                            <!-- Button 3: Direct onclick -->
-                            <button type="button" class="btn btn-primary" id="psn-btn-3" onclick="window.location.href='/psn/auth/start/'">
-                                <i class="fab fa-playstation"></i> Connect PSN Account (v3)
-                            </button>
-                            
-                            <!-- Button 4: Form submit -->
-                            <form action="/psn/auth/start/" method="get" style="margin: 0;">
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fab fa-playstation"></i> Connect PSN Account (v4)
-                                </button>
-                            </form>
-                        </div>
-                        
-                        <!-- Debug info -->
-                        <div class="debug-section mt-3">
-                            <small>
-                                <strong>Debug Info:</strong><br>
-                                User: {{ user.username }}<br>
-                                Profile: {{ profile_user.username }}<br>
-                                Same User: {% if user.username == profile_user.username %}YES{% else %}NO{% endif %}<br>
-                                PSN ID: "{{ profile_user.psn_id }}"<br>
-                                PSN Account: "{{ profile_user.psn_account_id }}"<br>
-                                User Authenticated: {{ user.is_authenticated }}
-                            </small>
-                        </div>
+                        <div class="small text-muted">1,600 points until</div>
+                        <div class="fw-bold">Level 6: Gaming Enthusiast</div>
                     </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
+                    
+                    <div class="mt-3 small text-muted">
+                        <div>• Current: 2,400 points</div>
+                        <div>• Next Level: 3,850 points</div>
+                        <div>• Progress: 1,450 / 1,450 points</div>
+                    </div>
+                </div>
 
-        <!-- Quick Stats Card -->
-        <div class="card mt-3 stats-card">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Quick Stats</h6>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-6">
-                        <h5 class="text-primary mb-1">{{ profile_user.total_trophy_score|floatformat:0 }}</h5>
-                        <small class="text-muted">Trophy Score</small>
-                    </div>
-                    <div class="col-6">
-                        <h5 class="text-success mb-1">{{ total_trophies }}</h5>
-                        <small class="text-muted">Total Trophies</small>
+                <!-- Quick Stats -->
+                <div class="sync-section">
+                    <h6 class="mb-3">This Month</h6>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="h5 text-primary mb-1">3</div>
+                            <div class="small text-muted">New Games</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="h5 text-success mb-1">+847</div>
+                            <div class="small text-muted">Points Gained</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Right Content - Trophy Stats and Activity -->
-    <div class="col-md-8">
-        <!-- Trophy Statistics -->
-        <div class="card stats-card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-trophy"></i> Trophy Collection</h5>
-            </div>
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-3">
-                        <div class="trophy-stat">
-                            <i class="fas fa-medal trophy-platinum fa-2x mb-2"></i>
-                            <h4 class="mb-1">{{ profile_user.platinum_count }}</h4>
-                            <small>Platinum</small>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="trophy-stat">
-                            <i class="fas fa-medal trophy-gold fa-2x mb-2"></i>
-                            <h4 class="mb-1">{{ profile_user.gold_count }}</h4>
-                            <small>Gold</small>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="trophy-stat">
-                            <i class="fas fa-medal trophy-silver fa-2x mb-2"></i>
-                            <h4 class="mb-1">{{ profile_user.silver_count }}</h4>
-                            <small>Silver</small>
-                        </div>
-                    </div>
-                    <div class="col-3">
-                        <div class="trophy-stat">
-                            <i class="fas fa-medal trophy-bronze fa-2x mb-2"></i>
-                            <h4 class="mb-1">{{ profile_user.bronze_count }}</h4>
-                            <small>Bronze</small>
-                        </div>
-                    </div>
+    <!-- Sync Modal -->
+    <div class="modal fade" id="syncModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sync fa-spin me-2"></i>Syncing Trophies
+                    </h5>
                 </div>
-                
-                <hr>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h6 class="text-muted mb-1">Trophy Score</h6>
-                            <h3 class="text-primary">{{ profile_user.total_trophy_score|floatformat:0 }}</h3>
-                        </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+                        <h6 id="syncStatus">Connecting to PlayStation Network...</h6>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h6 class="text-muted mb-1">Total Trophies</h6>
-                            <h3 class="text-success">{{ total_trophies }}</h3>
-                        </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             id="syncProgress" style="width: 25%"></div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="text-center">
-                            <h6 class="text-muted mb-1">Trophy Level</h6>
-                            <h3 class="text-warning">{{ profile_user.current_trophy_level }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- No Data Messages -->
-        {% if not profile_user.psn_id %}
-        <div class="card mt-3 stats-card">
-            <div class="card-body">
-                <div class="no-data-message">
-                    <i class="fab fa-playstation fa-4x text-muted mb-3"></i>
-                    <h5 class="text-muted">No Trophy Data Available</h5>
-                    {% if user.is_authenticated and user.username == profile_user.username %}
-                        <p class="text-muted mb-3">Connect your PlayStation Network account to start tracking your skill-based trophy scores!</p>
-                        <a href="/psn/auth/start/" class="btn psn-connect" id="main-psn-btn">
-                            <i class="fab fa-playstation"></i> Connect PSN Account (Main)
-                        </a>
-                    {% else %}
-                        <p class="text-muted">This user hasn't connected their PlayStation Network account yet.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<!-- Profile Actions (for own profile) -->
-{% if user.is_authenticated and user.username == profile_user.username %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card stats-card">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="fas fa-cog"></i> Profile Actions</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <a href="/profile/edit/" class="btn btn-outline-primary btn-sm w-100">
-                            <i class="fas fa-edit"></i> Edit Profile
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/psn/status/" class="btn btn-outline-info btn-sm w-100">
-                            <i class="fab fa-playstation"></i> PSN Status
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/trophies/my-collection/" class="btn btn-outline-success btn-sm w-100">
-                            <i class="fas fa-trophy"></i> My Trophies
-                        </a>
-                    </div>
-                    <div class="col-md-3">
-                        <a href="/rankings/" class="btn btn-outline-warning btn-sm w-100">
-                            <i class="fas fa-chart-line"></i> Rankings
-                        </a>
+                    <div class="small text-muted" id="syncDetails">
+                        Validating your PSN profile...
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
-{% endblock %}
 
-{% block scripts %}
-<script>
-// Debug PSN Integration
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== PSN Integration Debug ===');
-    
-    // Check all PSN buttons
-    const buttons = [
-        'psn-btn-1', 'psn-btn-2', 'psn-btn-3', 'main-psn-btn'
-    ];
-    
-    buttons.forEach(function(btnId) {
-        const btn = document.getElementById(btnId);
-        console.log('Button', btnId + ':', btn);
-        
-        if (btn) {
-            btn.addEventListener('click', function(e) {
-                console.log('=== BUTTON CLICKED ===');
-                console.log('Button ID:', btnId);
-                console.log('Button href:', this.href);
-                console.log('Button onclick:', this.onclick);
-                console.log('Event:', e);
-                
-                // Let the navigation happen normally
-                console.log('Allowing navigation...');
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Mock user data - in real implementation, this comes from your Django backend
+        const userData = {
+            username: 'TrophyHunter2025',
+            psn_id: 'TrophyHunter_PSN',
+            avatar_url: 'https://via.placeholder.com/120x120/0071c1/ffffff?text=PSN',
+            total_score: 4250,
+            current_level: 5,
+            level_name: 'Digital Collector',
+            level_progress: 62,
+            bronze_count: 145,
+            silver_count: 42,
+            gold_count: 28,
+            platinum_count: 8,
+            total_games: 23,
+            completed_games: 8,
+            global_rank: 2847,
+            total_players: 15420,
+            last_sync: '2 hours ago'
+        };
+
+        // Update page with user data
+        function updateProfileData() {
+            document.getElementById('username').textContent = userData.username;
+            document.getElementById('psnId').textContent = userData.psn_id;
+            document.getElementById('psnAvatar').src = userData.avatar_url;
+            document.getElementById('trophyLevel').textContent = `Level ${userData.current_level}: ${userData.level_name}`;
+            document.getElementById('totalScore').textContent = `${userData.total_score.toLocaleString()} points`;
+            document.getElementById('progressBar').style.width = userData.level_progress + '%';
+            document.getElementById('progressText').textContent = `${Math.floor(userData.total_score * userData.level_progress / 100)} / ${userData.total_score} points`;
+            
+            // Trophy counts
+            document.getElementById('bronzeCount').textContent = userData.bronze_count;
+            document.getElementById('silverCount').textContent = userData.silver_count;
+            document.getElementById('goldCount').textContent = userData.gold_count;
+            document.getElementById('platinumCount').textContent = userData.platinum_count;
+            
+            // Stats
+            document.getElementById('totalGames').textContent = userData.total_games;
+            document.getElementById('completedGames').textContent = userData.completed_games;
+            document.getElementById('totalTrophies').textContent = userData.bronze_count + userData.silver_count + userData.gold_count + userData.platinum_count;
+            document.getElementById('averageCompletion').textContent = Math.round((userData.completed_games / userData.total_games) * 100) + '%';
+            
+            // Last sync
+            document.getElementById('lastSync').textContent = `Last synced: ${userData.last_sync}`;
+        }
+
+        // Trophy sync functionality
+        function startSync() {
+            const syncButton = document.getElementById('syncButton');
+            const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
+            
+            // Disable sync button
+            syncButton.disabled = true;
+            syncButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Syncing...';
+            
+            // Show sync modal
+            syncModal.show();
+            
+            // Simulate sync process
+            simulateSync();
+        }
+
+        function simulateSync() {
+            const syncSteps = [
+                { progress: 25, status: 'Connecting to PlayStation Network...', details: 'Establishing secure connection...' },
+                { progress: 40, status: 'Validating PSN profile...', details: 'Checking profile accessibility...' },
+                { progress: 60, status: 'Fetching trophy data...', details: 'Downloading game and trophy information...' },
+                { progress: 80, status: 'Processing games...', details: 'Calculating skill-based scores...' },
+                { progress: 95, status: 'Updating rankings...', details: 'Finalizing your profile...' },
+                { progress: 100, status: 'Sync complete!', details: 'Your trophies are up to date.' }
+            ];
+
+            let currentStep = 0;
+
+            function updateSyncProgress() {
+                if (currentStep < syncSteps.length) {
+                    const step = syncSteps[currentStep];
+                    
+                    document.getElementById('syncProgress').style.width = step.progress + '%';
+                    document.getElementById('syncStatus').textContent = step.status;
+                    document.getElementById('syncDetails').textContent = step.details;
+                    
+                    currentStep++;
+                    
+                    if (currentStep < syncSteps.length) {
+                        setTimeout(updateSyncProgress, 1500);
+                    } else {
+                        // Sync complete
+                        setTimeout(() => {
+                            const syncModal = bootstrap.Modal.getInstance(document.getElementById('syncModal'));
+                            syncModal.hide();
+                            
+                            // Re-enable sync button
+                            const syncButton = document.getElementById('syncButton');
+                            syncButton.disabled = false;
+                            syncButton.innerHTML = '<i class="fas fa-download me-2"></i>Sync Trophies';
+                            
+                            // Update last sync time
+                            document.getElementById('lastSync').textContent = 'Last synced: Just now';
+                            
+                            // Show success message
+                            showSyncSuccess();
+                            
+                        }, 1000);
+                    }
+                }
+            }
+
+            updateSyncProgress();
+        }
+
+        function showSyncSuccess() {
+            // Create and show a success toast
+            const toast = document.createElement('div');
+            toast.className = 'toast position-fixed bottom-0 end-0 m-3';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Sync Complete</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    Your trophies have been successfully synced! Found 3 new trophies worth 127 points.
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove toast element after it's hidden
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
             });
         }
-    });
-    
-    // Test fetch to PSN URL
-    console.log('Testing PSN URL with fetch...');
-    fetch('/psn/auth/start/', {
-        method: 'GET',
-        credentials: 'same-origin'
-    })
-    .then(response => {
-        console.log('PSN URL Response:', response.status, response.statusText);
-        return response.text();
-    })
-    .then(text => {
-        console.log('PSN URL Content preview:', text.substring(0, 200));
-    })
-    .catch(error => {
-        console.log('PSN URL Error:', error);
-    });
-    
-    // Check for JavaScript errors
-    window.addEventListener('error', function(e) {
-        console.log('JavaScript Error:', e.message, 'at', e.filename + ':' + e.lineno);
-    });
-    
-    console.log('=== Debug setup complete ===');
-});
-</script>
-{% endblock %>
-{% endblock %}
-<!-- End of Profile Template -->
+
+        // Smooth counter animations
+        function animateCounters() {
+            const counters = document.querySelectorAll('.stat-number, .score-display');
+            
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent.replace(/[^\d]/g, ''));
+                const duration = 2000;
+                const increment = target / (duration / 16);
+                let current = 0;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    
+                    if (counter.classList.contains('score-display')) {
+                        counter.textContent = Math.floor(current).toLocaleString() + ' points';
+                    } else {
+                        counter.textContent = Math.floor(current).toLocaleString();
+                    }
+                }, 16);
+            });
+        }
+
+        // Progress ring animation
+        function animateProgressRing() {
+            const ring = document.querySelector('.trophy-progress-ring');
+            const progress = userData.level_progress;
+            
+            setTimeout(() => {
+                ring.style.setProperty('--progress', progress + '%');
+            }, 500);
+        }
+
+        // Trophy icon hover effects
+        function addTrophyEffects() {
+            const trophyIcons = document.querySelectorAll('.trophy-icon');
+            
+            trophyIcons.forEach(icon => {
+                icon.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.2) rotate(10deg)';
+                });
+                
+                icon.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1) rotate(0deg)';
+                });
+            });
+        }
+
+        // Auto-refresh sync time
+        function updateSyncTime() {
+            const lastSyncElement = document.getElementById('lastSync');
+            const now = new Date();
+            // In real implementation, calculate time difference from last_sync timestamp
+            // For demo, just update the display
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Press 'S' to sync
+            if (e.key.toLowerCase() === 's' && !e.ctrlKey && !e.altKey) {
+                const syncButton = document.getElementById('syncButton');
+                if (!syncButton.disabled) {
+                    startSync();
+                }
+            }
+            
+            // Press 'R' to go to rankings
+            if (e.key.toLowerCase() === 'r' && !e.ctrlKey && !e.altKey) {
+                window.location.href = '/rankings/';
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProfileData();
+            setTimeout(animateCounters, 300);
+            setTimeout(animateProgressRing, 800);
+            addTrophyEffects();
+            
+            // Update sync time every minute
+            setInterval(updateSyncTime, 60000);
+        });
+
+        // Add some dynamic effects
+        function addRandomTrophyGlow() {
+            const trophyIcons = document.querySelectorAll('.trophy-icon i');
+            const randomIcon = trophyIcons[Math.floor(Math.random() * trophyIcons.length)];
+            
+            randomIcon.style.filter = 'drop-shadow(0 0 10px currentColor)';
+            setTimeout(() => {
+                randomIcon.style.filter = 'none';
+            }, 2000);
+        }
+
+        // Random trophy glow effect every 10 seconds
+        setInterval(addRandomTrophyGlow, 10000);
+
+        // Add loading states for better UX
+        function showPageLoading() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'pageLoading';
+            loadingOverlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+            loadingOverlay.style.background = 'rgba(255, 255, 255, 0.9)';
+            loadingOverlay.style.zIndex = '9999';
+            loadingOverlay.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-trophy fa-3x text-primary mb-3"></i>
+                    <div class="h5">Loading your trophy profile...</div>
+                </div>
+            `;
+            
+            document.body.appendChild(loadingOverlay);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                loadingOverlay.remove();
+            }, 2000);
+        }
+
+        // Show loading on page navigation
+        document.querySelectorAll('a[href^="/"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('#')) {
+                    showPageLoading();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

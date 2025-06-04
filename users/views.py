@@ -1,20 +1,21 @@
 # =============================================================================
-# File: users/views.py - CORRECTED FOR PSNAWPService
-# Complete Users Views with PSNAWP Integration
+# File: users/views.py - SIMPLIFIED PSN INTEGRATION
+# Updated Users Views for Simplified PSN ID Registration Flow
 # =============================================================================
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from .forms import PSNRegistrationForm
 
-# Import PSNAWPService (corrected import)
+# Import PSNAWPService
 from psn_integration.services import PSNAWPService
 from psn_integration.models import PSNSyncJob, PSNUserValidation
 import logging
@@ -43,6 +44,42 @@ def home(request):
     }
     return render(request, 'users/home.html', context)
 
+def register(request):
+    """Simplified registration with PSN ID"""
+    if request.method == 'POST':
+        form = PSNRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f'Welcome to Trophy Tracker, {user.username}!')
+            return redirect('users:sync_progress')
+    else:
+        form = PSNRegistrationForm()
+    
+    return render(request, 'users/register.html', {'form': form})
+
+def sync_progress(request):
+    """Show trophy sync progress page"""
+    if not request.user.is_authenticated:
+        return redirect('users:login')
+    
+    # Start sync automatically if user just registered
+    if request.user.psn_id and not request.user.last_trophy_sync:
+        try:
+            psn_service = PSNAWPService()
+            sync_job = psn_service.sync_user_trophies(request.user, request.user.psn_id)
+            
+            return render(request, 'users/sync_progress.html', {
+                'sync_job_id': str(sync_job.job_id),
+                'auto_start': True
+            })
+        except Exception as e:
+            logger.error(f"Error starting auto-sync for {request.user.username}: {e}")
+            messages.error(request, 'Error starting trophy sync. You can try again from your profile.')
+            return redirect('users:profile')
+    
+    return render(request, 'users/sync_progress.html')
+
 def profile(request, username=None):
     """User profile view"""
     if username:
@@ -56,7 +93,7 @@ def profile(request, username=None):
     total_trophies = (profile_user.bronze_count + profile_user.silver_count + 
                      profile_user.gold_count + profile_user.platinum_count)
     
-    # Get recent trophy activity (if models are available)
+    # Get recent trophy activity
     recent_trophies = []
     if UserTrophy:
         recent_trophies = UserTrophy.objects.filter(
@@ -65,7 +102,7 @@ def profile(request, username=None):
             earned_datetime__isnull=False
         ).select_related('trophy__game').order_by('-earned_datetime')[:10]
     
-    # Get game progress (if models are available)
+    # Get game progress
     game_progress = []
     if UserGameProgress:
         game_progress = UserGameProgress.objects.filter(
@@ -82,25 +119,62 @@ def profile(request, username=None):
     return render(request, 'users/profile.html', context)
 
 @login_required
-def profile_edit(request):
-    """Edit user profile"""
+def settings(request):
+    """User settings page"""
     if request.method == 'POST':
-        user = request.user
+        # Handle PSN ID update
+        new_psn_id = request.POST.get('psn_id', '').strip()
         
-        # Handle basic fields
-        first_name = request.POST.get('first_name', '')
-        last_name = request.POST.get('last_name', '')
-        email = request.POST.get('email', '')
+        if new_psn_id and new_psn_id != request.user.psn_id:
+            try:
+                # Validate new PSN ID
+                psn_service = PSNAWPService()
+                validation_result = psn_service.validate_psn_user(new_psn_id)
+                
+                if validation_result['valid']:
+                    request.user.psn_id = new_psn_id
+                    request.user.psn_account_id = validation_result.get('account_id', '')
+                    request.user.psn_avatar_url = validation_result.get('avatar_url', '')
+                    request.user.save()
+                    messages.success(request, f'PSN ID updated to {new_psn_id}')
+                else:
+                    messages.error(request, f'Invalid PSN ID: {validation_result.get("error", "Validation failed")}')
+            except Exception as e:
+                logger.error(f"Error validating PSN ID: {e}")
+                messages.error(request, 'PSN service unavailable. Please try again later.')
         
-        user.first_name = first_name
-        user.last_name = last_name
-        user.email = email
-        user.save()
+        # Handle other settings
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
         
-        messages.success(request, 'Profile updated successfully!')
-        return redirect('users:profile')
+        if username and username != request.user.username:
+            if not User.objects.filter(username=username).exclude(id=request.user.id).exists():
+                request.user.username = username
+            else:
+                messages.error(request, 'Username already taken')
+        
+        if email:
+            request.user.email = email
+        
+        # Update preferences
+        request.user.allow_trophy_sync = request.POST.get('auto_sync') == 'on'
+        request.user.profile_public = request.POST.get('public_profile') == 'on'
+        
+        request.user.save()
+        messages.success(request, 'Settings updated successfully!')
+        return redirect('users:settings')
     
-    return render(request, 'users/profile_edit.html', {'user': request.user})
+    # Get recent sync jobs
+    recent_jobs = PSNSyncJob.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5] if request.user.psn_id else []
+    
+    context = {
+        'user': request.user,
+        'recent_jobs': recent_jobs,
+    }
+    
+    return render(request, 'users/settings.html', context)
 
 def user_login(request):
     """User login view"""
@@ -126,203 +200,12 @@ def user_logout(request):
     messages.success(request, 'You have been logged out successfully.')
     return redirect('users:home')
 
-def register(request):
-    """User registration view"""
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}!')
-            login(request, user)
-            return redirect('users:profile')
-    else:
-        form = UserCreationForm()
-    
-    return render(request, 'users/register.html', {'form': form})
-
-@login_required
-def psn_connection(request):
-    """Handle PSN ID connection and validation"""
-    
-    if request.method == 'POST':
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # AJAX request for PSN ID validation
-            return handle_psn_validation(request)
-        else:
-            # Regular form submission for settings update
-            return handle_psn_settings_update(request)
-    
-    # GET request - show connection page
-    context = {
-        'user': request.user,
-    }
-    
-    # Add recent sync jobs if user has PSN connected
-    if request.user.psn_id:
-        context['recent_jobs'] = PSNSyncJob.objects.filter(
-            user=request.user
-        ).order_by('-created_at')[:5]
-    
-    return render(request, 'users/psn_connection.html', context)
-
-def handle_psn_validation(request):
-    """Handle AJAX PSN ID validation - CORRECTED for PSNAWPService"""
-    try:
-        psn_id = request.POST.get('psn_id', '').strip()
-        profile_public = request.POST.get('profile_public') == 'on'
-        
-        if not psn_id:
-            return JsonResponse({
-                'success': False,
-                'message': 'PSN ID is required'
-            })
-        
-        if not profile_public:
-            return JsonResponse({
-                'success': False,
-                'message': 'Profile must be set to public for trophy syncing'
-            })
-        
-        # Validate PSN ID format
-        if len(psn_id) < 3 or len(psn_id) > 16:
-            return JsonResponse({
-                'success': False,
-                'message': 'PSN ID must be between 3 and 16 characters'
-            })
-        
-        # Check if PSN ID is already taken by another user
-        if User.objects.filter(psn_id=psn_id).exclude(id=request.user.id).exists():
-            return JsonResponse({
-                'success': False,
-                'message': 'This PSN ID is already connected to another account'
-            })
-        
-        # Use PSNAWPService to validate the ID (CORRECTED METHOD NAME)
-        try:
-            psn_service = PSNAWPService()
-            validation_result = psn_service.validate_psn_user(psn_id)  # CORRECTED: validate_psn_user, not validate_psn_id
-        except Exception as e:
-            logger.error(f"Error initializing PSNAWPService: {e}")
-            return JsonResponse({
-                'success': False,
-                'message': 'PSN service unavailable. Please try again later.'
-            })
-        
-        if validation_result['valid']:
-            # Store validation result
-            PSNUserValidation.objects.update_or_create(
-                psn_id=psn_id,
-                defaults={
-                    'validation_status': 'valid',
-                    'is_valid': True,
-                    'is_public': True,
-                    'psn_account_id': validation_result.get('account_id', ''),
-                    'display_name': validation_result.get('display_name', psn_id),
-                    'avatar_url': validation_result.get('avatar_url', ''),
-                    'trophy_level': validation_result.get('trophy_level', 1),
-                    'total_trophies': validation_result.get('total_trophies', {}),
-                    'trophy_points': validation_result.get('trophy_points', 0),
-                    'last_error': ''
-                }
-            )
-            
-            # Update user with PSN info
-            request.user.psn_id = psn_id
-            request.user.psn_avatar_url = validation_result.get('avatar_url', '')
-            request.user.psn_account_id = validation_result.get('account_id', '')
-            request.user.profile_public = True  # CORRECTED: use profile_public instead of psn_profile_public
-            request.user.allow_trophy_sync = True  # Enable trophy sync
-            request.user.save()
-            
-            logger.info(f"PSN ID {psn_id} successfully connected to user {request.user.username}")
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'PSN ID successfully connected! You can now sync your trophies.',
-                'psn_data': {
-                    'display_name': validation_result.get('display_name', psn_id),
-                    'trophy_level': validation_result.get('trophy_level', 1),
-                    'avatar_url': validation_result.get('avatar_url', ''),
-                    'total_trophies': validation_result.get('total_trophies', {})
-                }
-            })
-        else:
-            # Store failed validation
-            PSNUserValidation.objects.update_or_create(
-                psn_id=psn_id,
-                defaults={
-                    'validation_status': 'error',
-                    'is_valid': False,
-                    'is_public': False,
-                    'last_error': validation_result.get('error', 'Validation failed')
-                }
-            )
-            
-            return JsonResponse({
-                'success': False,
-                'message': validation_result.get('error', 'PSN ID validation failed')
-            })
-            
-    except Exception as e:
-        logger.error(f"Error validating PSN ID for user {request.user.username}: {e}")
-        return JsonResponse({
-            'success': False,
-            'message': 'An unexpected error occurred. Please try again.'
-        })
-
-def handle_psn_settings_update(request):
-    """Handle PSN settings form submission - CORRECTED for PSNAWPService"""
-    try:
-        sync_enabled = request.POST.get('sync_enabled') == 'on'
-        new_psn_id = request.POST.get('psn_id', '').strip()
-        
-        # Update sync settings (CORRECTED field name)
-        request.user.allow_trophy_sync = sync_enabled
-        
-        # Update PSN ID if changed
-        if new_psn_id != request.user.psn_id:
-            if new_psn_id:
-                # Validate new PSN ID
-                try:
-                    psn_service = PSNAWPService()
-                    validation_result = psn_service.validate_psn_user(new_psn_id)  # CORRECTED method name
-                    
-                    if validation_result['valid']:
-                        request.user.psn_id = new_psn_id
-                        request.user.psn_account_id = validation_result.get('account_id', '')
-                        request.user.psn_avatar_url = validation_result.get('avatar_url', '')
-                        messages.success(request, f'PSN ID updated to {new_psn_id}')
-                    else:
-                        messages.error(request, f'Invalid PSN ID: {validation_result.get("error", "Validation failed")}')
-                        return redirect('users:psn_connection')
-                except Exception as e:
-                    logger.error(f"Error validating PSN ID during update: {e}")
-                    messages.error(request, 'PSN service unavailable. Please try again later.')
-                    return redirect('users:psn_connection')
-            else:
-                # Clear PSN ID
-                request.user.psn_id = None
-                request.user.psn_account_id = None
-                request.user.psn_avatar_url = None
-                request.user.profile_public = False
-                messages.info(request, 'PSN ID removed from your account')
-        
-        request.user.save()
-        messages.success(request, 'PSN settings updated successfully')
-        
-    except Exception as e:
-        logger.error(f"Error updating PSN settings for user {request.user.username}: {e}")
-        messages.error(request, 'Error updating settings. Please try again.')
-    
-    return redirect('users:psn_connection')
-
 @login_required
 @require_http_methods(["POST"])
 def sync_trophies(request):
-    """Start trophy synchronization for user - CORRECTED for PSNAWPService"""
+    """Start trophy synchronization for user"""
     
-    # Check if user can sync (CORRECTED field names)
+    # Check if user can sync
     if not request.user.psn_id or not request.user.allow_trophy_sync:
         return JsonResponse({
             'success': False,
@@ -346,7 +229,7 @@ def sync_trophies(request):
         # Initialize PSN service
         psn_service = PSNAWPService()
         
-        # Start sync using the corrected method
+        # Start sync
         sync_job = psn_service.sync_user_trophies(request.user, request.user.psn_id)
         
         # Update user sync timestamp
@@ -417,13 +300,77 @@ def sync_status(request):
 
 @login_required
 @require_http_methods(["POST"])
+def validate_psn_id(request):
+    """AJAX endpoint to validate PSN ID"""
+    psn_id = request.POST.get('psn_id', '').strip()
+    
+    if not psn_id:
+        return JsonResponse({
+            'success': False,
+            'message': 'PSN ID is required'
+        })
+    
+    # Check if PSN ID is already taken
+    if User.objects.filter(psn_id=psn_id).exclude(id=request.user.id).exists():
+        return JsonResponse({
+            'success': False,
+            'message': 'This PSN ID is already connected to another account'
+        })
+    
+    try:
+        # Validate with PlayStation Network
+        psn_service = PSNAWPService()
+        validation_result = psn_service.validate_psn_user(psn_id)
+        
+        if validation_result['valid']:
+            # Store validation result
+            PSNUserValidation.objects.update_or_create(
+                psn_id=psn_id,
+                defaults={
+                    'validation_status': 'valid',
+                    'is_valid': True,
+                    'is_public': True,
+                    'psn_account_id': validation_result.get('account_id', ''),
+                    'display_name': validation_result.get('display_name', psn_id),
+                    'avatar_url': validation_result.get('avatar_url', ''),
+                    'trophy_level': validation_result.get('trophy_level', 1),
+                    'total_trophies': validation_result.get('total_trophies', {}),
+                    'trophy_points': validation_result.get('trophy_points', 0),
+                    'last_error': ''
+                }
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'PSN ID is valid and accessible!',
+                'psn_data': {
+                    'display_name': validation_result.get('display_name', psn_id),
+                    'trophy_level': validation_result.get('trophy_level', 1),
+                    'avatar_url': validation_result.get('avatar_url', ''),
+                    'total_trophies': validation_result.get('total_trophies', {})
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': validation_result.get('error', 'PSN ID validation failed')
+            })
+            
+    except Exception as e:
+        logger.error(f"Error validating PSN ID {psn_id}: {e}")
+        return JsonResponse({
+            'success': False,
+            'message': 'PSN service unavailable. Please try again later.'
+        })
+
+@login_required
+@require_http_methods(["POST"])
 def disconnect_psn(request):
     """Disconnect PSN account from user"""
     try:
         request.user.psn_id = None
         request.user.psn_account_id = None
         request.user.psn_avatar_url = None
-        request.user.profile_public = False
         request.user.allow_trophy_sync = False
         request.user.save()
         
@@ -434,4 +381,4 @@ def disconnect_psn(request):
         logger.error(f"Error disconnecting PSN for user {request.user.username}: {e}")
         messages.error(request, 'Error disconnecting PSN account. Please try again.')
     
-    return redirect('users:psn_connection')
+    return redirect('users:settings')

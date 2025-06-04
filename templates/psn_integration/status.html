@@ -1,77 +1,303 @@
-<!-- =============================================================================
-File: templates/psn_integration/status.html
-Basic PSN Status Template
-============================================================================= -->
-
 {% extends 'base.html' %}
 
-{% block title %}PlayStation Network Status - Trophy Tracker{% endblock %}
+{% block title %}PSN Status - Trophy Tracker{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4><i class="fab fa-playstation"></i> PlayStation Network Status</h4>
-            </div>
-            <div class="card-body">
-                {% if psn_connected %}
-                    <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle"></i> Connected</h5>
-                        {% if psn_token %}
-                            <p><strong>PSN ID:</strong> {{ psn_token.psn_online_id }}</p>
-                            <p><strong>Account ID:</strong> {{ psn_token.psn_account_id }}</p>
-                            <p><strong>Connected:</strong> {{ psn_token.created_at|date:"F d, Y H:i" }}</p>
-                            
-                            {% if token_expired %}
-                                <div class="alert alert-warning mt-3">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>Token Expired</strong> - Please reconnect your account.
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- PSN Connection Status -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fab fa-playstation me-2"></i>PlayStation Network Status</h5>
+                </div>
+                <div class="card-body">
+                    {% if psn_connected %}
+                        <div class="alert alert-success">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Connected to PlayStation Network</h6>
+                                    <p class="mb-0">PSN ID: <strong>{{ psn_id }}</strong></p>
+                                    {% if validation_status %}
+                                        <small class="text-muted">
+                                            Status: {{ validation_status.get_validation_status_display }}
+                                            {% if validation_status.last_checked %}
+                                                • Last checked: {{ validation_status.last_checked|timesince }} ago
+                                            {% endif %}
+                                        </small>
+                                    {% endif %}
                                 </div>
-                            {% else %}
-                                <p><strong>Token Expires:</strong> {{ psn_token.expires_at|date:"F d, Y H:i" }}</p>
-                            {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if not service_available %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Service Notice:</strong> Trophy sync service is temporarily unavailable. 
+                                Please try again later.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                                        <h6>Total Score</h6>
+                                        <h4 class="text-primary">{{ user.total_trophy_score|floatformat:0 }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <i class="fas fa-level-up-alt fa-2x text-success mb-2"></i>
+                                        <h6>Trophy Level</h6>
+                                        <h4 class="text-primary">{{ user.current_trophy_level }}</h4>
+                                        <small class="text-muted">{{ user.get_trophy_level_name }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <i class="fas fa-sync fa-2x text-info mb-2"></i>
+                                        <h6>Last Sync</h6>
+                                        {% if last_sync %}
+                                            <h6 class="text-primary">{{ last_sync|timesince }} ago</h6>
+                                        {% else %}
+                                            <h6 class="text-muted">Never</h6>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <form method="post" action="{% url 'psn_integration:sync_trophies' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-lg me-2" 
+                                        {% if not service_available %}disabled{% endif %}>
+                                    <i class="fas fa-sync me-2"></i>Sync Trophies Now
+                                </button>
+                            </form>
+                            <a href="{% url 'psn_integration:settings' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">PlayStation Network Not Connected</h6>
+                                    <p class="mb-0">Connect your PSN account to start tracking your trophies with skill-based scoring.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="{% url 'psn_integration:auth_start' %}" class="btn btn-primary btn-lg">
+                                <i class="fab fa-playstation me-2"></i>Connect PlayStation Account
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Sync History -->
+            {% if recent_syncs %}
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="fas fa-history me-2"></i>Recent Sync History</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Started</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Progress</th>
+                                        <th>Results</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sync in recent_syncs %}
+                                        <tr>
+                                            <td>
+                                                <small>{{ sync.created_at|timesince }} ago</small><br>
+                                                <small class="text-muted">{{ sync.created_at|date:"M d, H:i" }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ sync.get_sync_type_display }}</span>
+                                            </td>
+                                            <td>
+                                                {% if sync.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% elif sync.status == 'running' %}
+                                                    <span class="badge bg-primary">Running</span>
+                                                {% elif sync.status == 'pending' %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% elif sync.status == 'failed' %}
+                                                    <span class="badge bg-danger">Failed</span>
+                                                {% elif sync.status == 'cancelled' %}
+                                                    <span class="badge bg-secondary">Cancelled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sync.status == 'running' %}
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ sync.progress_percentage }}%"
+                                                             aria-valuenow="{{ sync.progress_percentage }}" 
+                                                             aria-valuemin="0" aria-valuemax="100">
+                                                            {{ sync.progress_percentage }}%
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted">{{ sync.current_task }}</small>
+                                                {% else %}
+                                                    {{ sync.progress_percentage }}%
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sync.status == 'completed' %}
+                                                    <small>
+                                                        🎮 {{ sync.games_found }} games<br>
+                                                        🏆 {{ sync.trophies_synced }} trophies<br>
+                                                        📈 +{{ sync.score_gained|floatformat:0 }} points
+                                                    </small>
+                                                {% elif sync.errors_count > 0 %}
+                                                    <small class="text-danger">
+                                                        {{ sync.errors_count }} error{{ sync.errors_count|pluralize }}
+                                                    </small>
+                                                {% else %}
+                                                    <small class="text-muted">-</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'psn_integration:sync_details' sync.job_id %}" 
+                                                       class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if sync.status == 'running' or sync.status == 'pending' %}
+                                                        <form method="post" action="{% url 'psn_integration:cancel_sync' sync.job_id %}" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                                    onclick="return confirm('Cancel this sync job?')">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'psn_integration:sync_history' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-history me-1"></i>View Full History
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Service Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-server me-2"></i>Service Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>PlayStation API:</span>
+                        {% if active_token %}
+                            <span class="badge bg-success">Available</span>
                         {% else %}
-                            <p><strong>PSN ID:</strong> {{ psn_id|default:"Connected" }}</p>
+                            <span class="badge bg-danger">Unavailable</span>
                         {% endif %}
                     </div>
-                    
-                    <div class="d-grid gap-2">
-                        <a href="/psn/sync/" class="btn btn-primary">
-                            <i class="fas fa-sync"></i> Sync Trophies
-                        </a>
-                        <a href="/psn/disconnect/" class="btn btn-outline-danger">
-                            <i class="fas fa-unlink"></i> Disconnect PSN Account
-                        </a>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Trophy Sync:</span>
+                        {% if service_available %}
+                            <span class="badge bg-success">Online</span>
+                        {% else %}
+                            <span class="badge bg-warning">Limited</span>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        <h5><i class="fas fa-info-circle"></i> Not Connected</h5>
-                        <p>Connect your PlayStation Network account to sync your trophies and get skill-based rankings.</p>
+                    <div class="d-flex justify-content-between">
+                        <span>Database:</span>
+                        <span class="badge bg-success">Online</span>
                     </div>
                     
+                    {% if active_token %}
+                        <hr>
+                        <small class="text-muted">
+                            <strong>Token Status:</strong><br>
+                            Created: {{ active_token.created_at|timesince }} ago<br>
+                            Last used: {{ active_token.last_used|timesince }} ago<br>
+                            API calls: {{ active_token.api_calls_count }}
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-lightning me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="/psn/auth/start/" class="btn btn-success">
-                            <i class="fab fa-playstation"></i> Connect PSN Account
-                        </a>
+                        {% if psn_connected %}
+                            <a href="{% url 'users:profile' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-user me-2"></i>View My Profile
+                            </a>
+                            <a href="/rankings/" class="btn btn-outline-success">
+                                <i class="fas fa-trophy me-2"></i>View Rankings
+                            </a>
+                            <a href="{% url 'psn_integration:settings' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-cog me-2"></i>PSN Settings
+                            </a>
+                        {% else %}
+                            <a href="{% url 'psn_integration:auth_start' %}" class="btn btn-primary">
+                                <i class="fab fa-playstation me-2"></i>Connect PSN
+                            </a>
+                        {% endif %}
+                        
+                        {% if settings.DEBUG %}
+                            <hr>
+                            <small class="text-muted mb-2">Debug Tools:</small>
+                            <a href="{% url 'psn_integration:debug_token' %}" class="btn btn-outline-warning btn-sm">
+                                <i class="fas fa-bug me-1"></i>Debug Token
+                            </a>
+                        {% endif %}
                     </div>
-                {% endif %}
-                
-                <div class="mt-4">
-                    <a href="/profile/" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Profile
-                    </a>
                 </div>
             </div>
         </div>
-        
-        <!-- Development Note -->
-        <div class="alert alert-info mt-4">
-            <h6><i class="fas fa-info-circle"></i> Development Status</h6>
-            <p><strong>Phase 1:</strong> Basic PSN authentication setup ✅</p>
-            <p><strong>Phase 2:</strong> Full trophy sync functionality (Coming next!)</p>
-            <p>The "Connect PSN Account" button will redirect to PlayStation's login page once Phase 2 is implemented.</p>
-        </div>
     </div>
 </div>
+
+<script>
+// Auto-refresh for running sync jobs
+document.addEventListener('DOMContentLoaded', function() {
+    const runningJobs = document.querySelectorAll('.badge.bg-primary');
+    
+    if (runningJobs.length > 0) {
+        // Refresh page every 10 seconds if there are running jobs
+        setTimeout(() => {
+            location.reload();
+        }, 10000);
+    }
+});
+</script>
 {% endblock %}

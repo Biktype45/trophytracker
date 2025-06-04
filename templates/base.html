@@ -23,7 +23,7 @@
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'users:home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'users:home' %}">
                 🏆 Trophy Tracker
             </a>
             
@@ -35,22 +35,22 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'users:home' %}">
-                            <i class="fas fa-home"></i> Home
+                            <i class="fas fa-home me-1"></i> Home
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/rankings/">
-                            <i class="fas fa-trophy"></i> Rankings
+                            <i class="fas fa-trophy me-1"></i> Rankings
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/games/">
-                            <i class="fas fa-gamepad"></i> Games
+                            <i class="fas fa-gamepad me-1"></i> Games
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/leaderboards/">
-                            <i class="fas fa-chart-line"></i> Leaderboards
+                            <i class="fas fa-chart-line me-1"></i> Leaderboards
                         </a>
                     </li>
                 </ul>
@@ -61,7 +61,9 @@
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-2"></i>
                                 {{ user.username }}
-                                <span class="badge bg-secondary ms-2">{{ user.current_trophy_level }}</span>
+                                {% if user.current_trophy_level %}
+                                    <span class="badge bg-secondary ms-2">{{ user.current_trophy_level }}</span>
+                                {% endif %}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
@@ -70,8 +72,8 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{% url 'users:profile_edit' %}">
-                                        <i class="fas fa-edit me-2"></i> Edit Profile
+                                    <a class="dropdown-item" href="{% url 'users:settings' %}">
+                                        <i class="fas fa-cog me-2"></i> Settings
                                     </a>
                                 </li>
                                 <li>
@@ -79,12 +81,16 @@
                                         <i class="fas fa-trophy me-2"></i> My Trophies
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item" href="/settings/">
-                                        <i class="fas fa-cog me-2"></i> Settings
-                                    </a>
-                                </li>
+                                {% if user.psn_id %}
                                 <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <span class="dropdown-item-text">
+                                        <small class="text-muted">
+                                            <i class="fab fa-playstation me-1"></i>{{ user.psn_id }}
+                                        </small>
+                                    </span>
+                                </li>
+                                {% if user.current_trophy_level %}
                                 <li>
                                     <span class="dropdown-item-text">
                                         <small class="text-muted">
@@ -92,6 +98,8 @@
                                         </small>
                                     </span>
                                 </li>
+                                {% endif %}
+                                {% if user.total_trophy_score %}
                                 <li>
                                     <span class="dropdown-item-text">
                                         <small class="text-muted">
@@ -99,6 +107,8 @@
                                         </small>
                                     </span>
                                 </li>
+                                {% endif %}
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="{% url 'users:logout' %}">
@@ -110,12 +120,12 @@
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'users:login' %}">
-                                <i class="fas fa-sign-in-alt"></i> Login
+                                <i class="fas fa-sign-in-alt me-1"></i> Login
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link btn btn-outline-light btn-sm ms-2" href="{% url 'users:register' %}">
-                                <i class="fas fa-user-plus"></i> Register
+                                <i class="fas fa-user-plus me-1"></i> Register
                             </a>
                         </li>
                     {% endif %}
@@ -129,7 +139,15 @@
         <div class="container mt-3">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>
+                    {% if message.tags == 'error' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% elif message.tags == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% elif message.tags == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -138,7 +156,7 @@
     {% endif %}
 
     <!-- Main Content -->
-    <main class="container mt-4">
+    <main>
         {% block content %}
         <!-- Page content goes here -->
         {% endblock %}
@@ -189,15 +207,17 @@
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom JavaScript -->
+    <!-- Global JavaScript -->
     <script>
         // Auto-hide alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
+                const alerts = document.querySelectorAll('.alert-dismissible');
                 alerts.forEach(function(alert) {
                     const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+                    if (bsAlert) {
+                        bsAlert.close();
+                    }
                 });
             }, 5000);
         });
@@ -213,6 +233,88 @@
                 }
             });
         });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+            }
+        });
+
+        // Global tooltip initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
+        // Global popover initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        });
+
+        // Loading state for navigation links
+        document.querySelectorAll('a[href^="/"]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('#') && !this.hasAttribute('data-bs-toggle')) {
+                    // Add loading class to clicked link
+                    this.style.opacity = '0.6';
+                    this.style.pointerEvents = 'none';
+                }
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Alt + H for Home
+            if (e.altKey && e.key === 'h') {
+                e.preventDefault();
+                window.location.href = '{% url "users:home" %}';
+            }
+            
+            // Alt + P for Profile (if logged in)
+            {% if user.is_authenticated %}
+            if (e.altKey && e.key === 'p') {
+                e.preventDefault();
+                window.location.href = '{% url "users:profile" %}';
+            }
+            
+            // Alt + S for Settings (if logged in)
+            if (e.altKey && e.key === 's') {
+                e.preventDefault();
+                window.location.href = '{% url "users:settings" %}';
+            }
+            {% endif %}
+            
+            // Alt + R for Rankings
+            if (e.altKey && e.key === 'r') {
+                e.preventDefault();
+                window.location.href = '/rankings/';
+            }
+        });
+
+        // Add smooth scroll behavior
+        document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Performance monitoring (optional)
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (perfData && perfData.loadEventEnd > perfData.loadEventStart) {
+                        const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
+                        console.log('Page load time:', loadTime + 'ms');
+                    }
+                }, 0);
+            });
+        }
     </script>
     
     {% block scripts %}

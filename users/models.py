@@ -7,25 +7,22 @@ import uuid
 class User(AbstractUser):
     """Extended User model with PSN integration and trophy tracking"""
     
-    # PSN Integration
+    # PSN Integration (user's PSN profile info only)
     psn_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
     psn_avatar_url = models.URLField(blank=True, null=True)
     psn_account_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    psn_access_token = models.TextField(blank=True, null=True)  # Encrypted in production
-    psn_refresh_token = models.TextField(blank=True, null=True)  # Encrypted in production
-    psn_token_expires = models.DateTimeField(null=True, blank=True)
-    psn_id = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    psn_profile_public = models.BooleanField(default=False)
-    psn_account_id = models.CharField(max_length=100, blank=True, null=True)
-    sync_enabled = models.BooleanField(default=True)
+    
+    # Sync Settings
+    allow_trophy_sync = models.BooleanField(default=True)
     last_sync_attempt = models.DateTimeField(null=True, blank=True)
     last_successful_sync = models.DateTimeField(null=True, blank=True)
     sync_error_count = models.IntegerField(default=0)
     last_sync_error = models.TextField(blank=True)
 
     def can_sync_trophies(self):
-        return (self.psn_id and self.psn_profile_public and 
-                self.sync_enabled and self.sync_error_count < 5)
+        """Check if user can sync trophies"""
+        return (self.psn_id and self.profile_public and 
+                self.allow_trophy_sync and self.sync_error_count < 5)
     
     # Trophy Stats (calculated fields)
     total_trophy_score = models.IntegerField(default=0)
@@ -41,7 +38,6 @@ class User(AbstractUser):
     # Profile Settings
     profile_public = models.BooleanField(default=True)
     show_rare_trophies = models.BooleanField(default=True)
-    allow_trophy_sync = models.BooleanField(default=True)
     
     # Timestamps
     last_trophy_sync = models.DateTimeField(null=True, blank=True)
@@ -133,5 +129,72 @@ class User(AbstractUser):
         self.current_trophy_level = new_level
         self.save(update_fields=['current_trophy_level', 'level_progress_percentage'])
     
+    def update_trophy_counts(self):
+        """Update trophy counts from UserTrophy records"""
+        from trophies.models import UserTrophy
+        
+        # Count earned trophies by type
+        trophy_counts = UserTrophy.objects.filter(
+            user=self, 
+            earned=True
+        ).values('trophy__trophy_type').annotate(
+            count=models.Count('trophy__trophy_type')
+        )
+        
+        # Reset counts
+        self.bronze_count = 0
+        self.silver_count = 0
+        self.gold_count = 0
+        self.platinum_count = 0
+        
+        # Update counts from query results
+        for count_data in trophy_counts:
+            trophy_type = count_data['trophy__trophy_type']
+            count = count_data['count']
+            
+            if trophy_type == 'bronze':
+                self.bronze_count = count
+            elif trophy_type == 'silver':
+                self.silver_count = count
+            elif trophy_type == 'gold':
+                self.gold_count = count
+            elif trophy_type == 'platinum':
+                self.platinum_count = count
+        
+        self.save(update_fields=['bronze_count', 'silver_count', 'gold_count', 'platinum_count'])
+    
+    def update_all_trophy_data(self):
+        """Update all trophy-related data (scores, levels, counts)"""
+        self.update_trophy_counts()
+        self.calculate_total_score()
+        self.update_trophy_level()
+    
+    def reset_sync_errors(self):
+        """Reset sync error tracking"""
+        self.sync_error_count = 0
+        self.last_sync_error = ''
+        self.save(update_fields=['sync_error_count', 'last_sync_error'])
+    
+    def record_sync_attempt(self, success=False, error_message=''):
+        """Record a sync attempt"""
+        self.last_sync_attempt = timezone.now()
+        
+        if success:
+            self.last_successful_sync = timezone.now()
+            self.sync_error_count = 0
+            self.last_sync_error = ''
+            self.last_trophy_sync = timezone.now()
+        else:
+            self.sync_error_count += 1
+            self.last_sync_error = error_message
+        
+        self.save(update_fields=[
+            'last_sync_attempt', 
+            'last_successful_sync', 
+            'sync_error_count', 
+            'last_sync_error',
+            'last_trophy_sync'
+        ])
+
     class Meta:
         db_table = 'users_user'

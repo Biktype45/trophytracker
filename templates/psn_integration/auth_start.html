@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Connect PlayStation Network - Trophy Tracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fab fa-playstation me-2"></i>Connect PlayStation Network</h4>
+                </div>
+                <div class="card-body">
+                    {% if psn_connected %}
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-check-circle me-2"></i>PlayStation Network Connected</h5>
+                            <p class="mb-0">Currently connected PSN ID: <strong>{{ current_psn_id }}</strong></p>
+                        </div>
+                        
+                        <h6>Update PSN Connection</h6>
+                        <p class="text-muted">You can update your connected PlayStation Network ID below:</p>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle me-2"></i>Connect Your PlayStation Account</h5>
+                            <p class="mb-0">Link your PlayStation Network account to sync your trophy data and track your skill-based progress.</p>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'psn_integration:connect' %}" id="psnConnectForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="psn_id" class="form-label fw-bold">PlayStation Network ID</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fab fa-playstation"></i></span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="psn_id" 
+                                       name="psn_id" 
+                                       value="{{ current_psn_id }}"
+                                       placeholder="Enter your PSN ID" 
+                                       required
+                                       pattern="[a-zA-Z0-9_-]{3,16}"
+                                       title="PSN ID must be 3-16 characters, letters, numbers, underscore or dash only">
+                                <button type="button" class="btn btn-outline-secondary" id="validateBtn">
+                                    <i class="fas fa-check me-1"></i>Validate
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                This is your PlayStation Network username (not your real name)
+                            </div>
+                            <div id="validationResult" class="mt-2"></div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Privacy Requirements</h6>
+                            <p class="mb-2">Your PlayStation profile must be set to <strong>Public</strong> for trophy sync to work:</p>
+                            <ol class="small mb-0">
+                                <li>Go to <strong>Settings</strong> → <strong>Account Management</strong> → <strong>Privacy Settings</strong></li>
+                                <li>Set <strong>"Profile"</strong> to <strong>Anyone</strong></li>
+                                <li>Set <strong>"Trophies"</strong> to <strong>Anyone</strong></li>
+                                <li>Set <strong>"Games"</strong> to <strong>Anyone</strong></li>
+                            </ol>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fab fa-playstation me-2"></i>
+                                {% if psn_connected %}Update PSN Connection{% else %}Connect PlayStation Account{% endif %}
+                            </button>
+                            <a href="{% url 'users:profile' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Profile
+                            </a>
+                        </div>
+                    </form>
+                    
+                    {% if psn_connected %}
+                        <hr>
+                        <div class="text-center">
+                            <form method="post" action="{% url 'psn_integration:disconnect' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger" 
+                                        onclick="return confirm('Are you sure you want to disconnect your PlayStation Network account?')">
+                                    <i class="fas fa-unlink me-2"></i>Disconnect PSN Account
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle me-2"></i>How It Works</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-link fa-2x text-primary mb-2"></i>
+                            <h6>1. Connect</h6>
+                            <p class="small text-muted">Enter your PSN ID to link your PlayStation account</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-sync fa-2x text-success mb-2"></i>
+                            <h6>2. Sync</h6>
+                            <p class="small text-muted">We'll sync your trophy data using PlayStation's official API</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <i class="fas fa-trophy fa-2x text-warning mb-2"></i>
+                            <h6>3. Rank</h6>
+                            <p class="small text-muted">Get ranked based on skill-based scoring, not just quantity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const validateBtn = document.getElementById('validateBtn');
+    const psnIdInput = document.getElementById('psn_id');
+    const validationResult = document.getElementById('validationResult');
+    
+    validateBtn.addEventListener('click', function() {
+        const psnId = psnIdInput.value.trim();
+        
+        if (!psnId) {
+            showValidationResult('Please enter a PSN ID', 'warning');
+            return;
+        }
+        
+        if (psnId.length < 3 || psnId.length > 16) {
+            showValidationResult('PSN ID must be 3-16 characters', 'danger');
+            return;
+        }
+        
+        // Show loading state
+        validateBtn.disabled = true;
+        validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Validating...';
+        
+        // Send validation request
+        fetch('{% url "psn_integration:validate_psn_id" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                'psn_id': psnId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            validateBtn.disabled = false;
+            validateBtn.innerHTML = '<i class="fas fa-check me-1"></i>Validate';
+            
+            if (data.valid) {
+                if (data.is_public) {
+                    showValidationResult(`✅ PSN ID "${psnId}" is valid and public!`, 'success');
+                } else {
+                    showValidationResult(`⚠️ PSN ID "${psnId}" is valid but private. Please set your profile to public.`, 'warning');
+                }
+            } else {
+                showValidationResult(`❌ ${data.error || 'PSN ID not found or not accessible'}`, 'danger');
+            }
+        })
+        .catch(error => {
+            validateBtn.disabled = false;
+            validateBtn.innerHTML = '<i class="fas fa-check me-1"></i>Validate';
+            showValidationResult('❌ Validation service error. Please try again.', 'danger');
+            console.error('Validation error:', error);
+        });
+    });
+    
+    function showValidationResult(message, type) {
+        validationResult.innerHTML = `<div class="alert alert-${type} alert-sm">${message}</div>`;
+        setTimeout(() => {
+            validationResult.innerHTML = '';
+        }, 5000);
+    }
+    
+    // Auto-validate on input change (with debounce)
+    let validationTimeout;
+    psnIdInput.addEventListener('input', function() {
+        clearTimeout(validationTimeout);
+        validationResult.innerHTML = '';
+        
+        const psnId = this.value.trim();
+        if (psnId.length >= 3) {
+            validationTimeout = setTimeout(() => {
+                validateBtn.click();
+            }, 1000);
+        }
+    });
+    
+    // Form submission handling
+    document.getElementById('psnConnectForm').addEventListener('submit', function(e) {
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
+    });
+});
+</script>
+{% endblock %}
